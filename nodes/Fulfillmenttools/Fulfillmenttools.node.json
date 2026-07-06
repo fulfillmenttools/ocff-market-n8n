@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-base.fulfillmenttools",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Sales", "Miscellaneous"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://github.com/fulfillmenttools/ocff-market-n8n?tab=readme-ov-file#credentials"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://docs.fulfillmenttools.com/documentation"
+			}
+		]
+	}
+}
