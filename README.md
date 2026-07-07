@@ -52,11 +52,27 @@ This package uses the official [`n8n-node` CLI](https://docs.n8n.io/connect/crea
 
 ```bash
 npm install       # install dependencies
-npm run dev       # start a local n8n with this node hot-reloaded (http://localhost:5678)
+npm run dev       # official runner (starts n8n via npx n8n@latest)
 npm run build     # compile + bundle assets into dist/
 npm run lint      # run the n8n node lint rules (add :fix to autofix)
 npm run release   # build, lint, changelog, tag and publish to npm
 ```
+
+### Local run helper (`dev:local`)
+
+If `npm run dev` fails to start n8n in your environment (recent Node versions
+crash `npx n8n@latest`), use the bundled helper instead. It links this package
+into n8n's custom-extensions folder, builds, watches TypeScript for hot reload,
+and starts a **globally-installed** n8n (`npm install -g n8n@1`):
+
+```bash
+npm run dev:local     # start n8n at http://localhost:5678 (action nodes)
+npm run dev:tunnel    # same, plus a Cloudflare tunnel so the Trigger can receive events
+```
+
+`dev:tunnel` requires `cloudflared` (`brew install cloudflared`) and prints a
+public URL that fulfillmenttools can call back — re-activate trigger workflows
+whenever the URL changes. Stop either with `Ctrl+C`.
 
 ### Extending the package
 
