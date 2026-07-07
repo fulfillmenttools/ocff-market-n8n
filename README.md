@@ -61,18 +61,21 @@ npm run release   # build, lint, changelog, tag and publish to npm
 ### Local run helper (`dev:local`)
 
 If `npm run dev` fails to start n8n in your environment (recent Node versions
-crash `npx n8n@latest`), use the bundled helper instead. It links this package
-into n8n's custom-extensions folder, builds, watches TypeScript for hot reload,
-and starts a **globally-installed** n8n (`npm install -g n8n@1`):
+crash `npx n8n@latest`), use the bundled helper instead. In one command it:
+links this package into n8n's custom-extensions folder, builds, watches
+TypeScript for hot reload, starts a **Cloudflare tunnel**, and starts a
+**globally-installed** n8n (`npm install -g n8n@1`) wired to the tunnel URL:
 
 ```bash
-npm run dev:local     # start n8n at http://localhost:5678 (action nodes)
-npm run dev:tunnel    # same, plus a Cloudflare tunnel so the Trigger can receive events
+npm run dev:local                  # link + build + watch + tunnel + n8n
+npm run dev:local:no-tunnel        # same, without the tunnel (action nodes only)
 ```
 
-`dev:tunnel` requires `cloudflared` (`brew install cloudflared`) and prints a
-public URL that fulfillmenttools can call back — re-activate trigger workflows
-whenever the URL changes. Stop either with `Ctrl+C`.
+The tunnel (on by default) needs `cloudflared` (`brew install cloudflared`) and
+gives fulfillmenttools a public callback URL so the Trigger node can receive
+events. The URL is printed on startup and **changes each run** — re-activate
+trigger workflows after restarting. If `cloudflared` isn't installed,
+`dev:local` still starts n8n, just without the tunnel. Stop with `Ctrl+C`.
 
 ### Extending the package
 

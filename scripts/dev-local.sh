@@ -10,10 +10,11 @@
 # into n8n's custom-extensions folder and TypeScript recompiled on change.
 #
 # Usage:
-#   npm run dev:local            # start n8n locally (action nodes)
-#   npm run dev:tunnel           # same, plus a Cloudflare tunnel for the Trigger
+#   npm run dev:local              # link + build + watch + Cloudflare tunnel + n8n
+#   npm run dev:local -- --no-tunnel   # same, but without the tunnel (action nodes only)
 #
-# Stop with Ctrl+C — background watchers and the tunnel are cleaned up.
+# The tunnel is on by default so the Trigger node can receive events. Stop with
+# Ctrl+C — background watchers and the tunnel are cleaned up.
 
 set -eo pipefail
 
@@ -24,9 +25,9 @@ PKG_NAME="$(node -p "require('./package.json').name")"
 N8N_USER_FOLDER="${N8N_USER_FOLDER:-$HOME/.n8n-node-cli}"
 CUSTOM_DIR="$N8N_USER_FOLDER/.n8n/custom/node_modules"
 
-USE_TUNNEL=false
+USE_TUNNEL=true
 for arg in "$@"; do
-	[ "$arg" = "--tunnel" ] && USE_TUNNEL=true
+	[ "$arg" = "--no-tunnel" ] && USE_TUNNEL=false
 done
 
 # --- prerequisites -----------------------------------------------------------
@@ -73,11 +74,12 @@ echo "👀 Watching TypeScript (hot reload enabled)"
 
 # --- optional Cloudflare tunnel (needed for the Trigger / webhooks) ----------
 WEBHOOK_URL=""
+if [ "$USE_TUNNEL" = true ] && ! command -v cloudflared >/dev/null 2>&1; then
+	echo "⚠️  cloudflared not installed — starting WITHOUT a tunnel."
+	echo "    The Trigger node won't receive events. Install with: brew install cloudflared"
+	USE_TUNNEL=false
+fi
 if [ "$USE_TUNNEL" = true ]; then
-	if ! command -v cloudflared >/dev/null 2>&1; then
-		echo "❌ cloudflared not installed.  brew install cloudflared"
-		exit 1
-	fi
 	CF_LOG="$(mktemp -t ft-cf-tunnel)"
 	cloudflared tunnel --url http://localhost:5678 >"$CF_LOG" 2>&1 &
 	PIDS+=("$!")

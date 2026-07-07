@@ -24,7 +24,7 @@
 		"build:watch": "tsc --watch",
 		"dev": "n8n-node dev",
 		"dev:local": "bash scripts/dev-local.sh",
-		"dev:tunnel": "bash scripts/dev-local.sh --tunnel",
+		"dev:local:no-tunnel": "bash scripts/dev-local.sh --no-tunnel",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
 		"release": "n8n-node release",
