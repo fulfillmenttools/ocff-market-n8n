@@ -91,19 +91,36 @@ export const facilityFields: INodeProperties[] = [
 	//   facility: get / update / delete — identifier
 	// ----------------------------------
 	{
-		displayName: 'Facility ID',
+		displayName: 'Facility',
 		name: 'facilityId',
-		type: 'string',
+		type: 'resourceLocator',
 		required: true,
-		default: '',
+		default: { mode: 'list', value: '' },
 		displayOptions: {
 			show: {
 				resource: ['facility'],
 				operation: ['get', 'update', 'delete'],
 			},
 		},
-		description:
-			'ID of the facility. Also accepts a tenantFacilityId in URN format (urn:fft:facility:tenantFacilityId:&lt;value&gt;).',
+		description: 'The facility to operate on',
+		modes: [
+			{
+				displayName: 'From List',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'searchFacilities',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'By ID',
+				name: 'id',
+				type: 'string',
+				placeholder: 'e.g. 019f37b9-eff2-7398-82a8-d0efc6a50b63',
+				hint: 'Facility ID, or a tenantFacilityId in URN format (urn:fft:facility:tenantFacilityId:<value>)',
+			},
+		],
 	},
 
 	// ----------------------------------
@@ -189,6 +206,23 @@ export const facilityFields: INodeProperties[] = [
 				],
 			},
 		],
+	},
+
+	// ----------------------------------
+	//   facility: get / getAll — simplify
+	// ----------------------------------
+	{
+		displayName: 'Simplify',
+		name: 'simplify',
+		type: 'boolean',
+		default: false,
+		displayOptions: {
+			show: {
+				resource: ['facility'],
+				operation: ['get', 'getAll'],
+			},
+		},
+		description: 'Whether to return a simplified version of the response instead of the raw data',
 	},
 
 	// ----------------------------------
@@ -302,7 +336,7 @@ export const facilityFields: INodeProperties[] = [
 				name: 'tenantFacilityId',
 				type: 'string',
 				default: '',
-				placeholder: 'K12345',
+				placeholder: 'e.g. K12345',
 			},
 		],
 	},
@@ -330,7 +364,7 @@ export const facilityFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: 'Hamburg NW2',
+		placeholder: 'e.g. Hamburg NW2',
 		displayOptions: showForCreateAny,
 		description: 'Human readable name of the facility',
 	},
@@ -340,7 +374,7 @@ export const facilityFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: 'Speedy Boxales Ltd.',
+		placeholder: 'e.g. Speedy Boxales Ltd.',
 		displayOptions: showForCreateAny,
 		description: 'Company name of the facility address',
 	},
@@ -350,7 +384,7 @@ export const facilityFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: 'Hauptstr.',
+		placeholder: 'e.g. Hauptstr.',
 		displayOptions: showForCreate,
 	},
 	{
@@ -358,7 +392,7 @@ export const facilityFields: INodeProperties[] = [
 		name: 'houseNumber',
 		type: 'string',
 		default: '',
-		placeholder: '42a',
+		placeholder: 'e.g. 42a',
 		displayOptions: showForCreate,
 	},
 	{
@@ -367,7 +401,7 @@ export const facilityFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: 'Langenfeld',
+		placeholder: 'e.g. Langenfeld',
 		displayOptions: showForCreate,
 	},
 	{
@@ -376,7 +410,7 @@ export const facilityFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: '40764',
+		placeholder: 'e.g. 40764',
 		displayOptions: showForCreate,
 	},
 	{
@@ -385,7 +419,7 @@ export const facilityFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
-		placeholder: 'DE',
+		placeholder: 'e.g. DE',
 		displayOptions: showForCreateAny,
 		description: 'Two-letter country code as per ISO 3166-1 alpha-2 (e.g. DE)',
 	},
@@ -407,14 +441,14 @@ export const facilityFields: INodeProperties[] = [
 				name: 'additionalAddressInfo',
 				type: 'string',
 				default: '',
-				placeholder: 'to care of: Mrs. Müller',
+				placeholder: 'e.g. c/o Jane Doe',
 			},
 			{
 				displayName: 'City',
 				name: 'city',
 				type: 'string',
 				default: '',
-				placeholder: 'Langenfeld',
+				placeholder: 'e.g. Langenfeld',
 			},
 			{
 				displayName: 'Custom Attributes (JSON)',
@@ -428,7 +462,7 @@ export const facilityFields: INodeProperties[] = [
 				name: 'houseNumber',
 				type: 'string',
 				default: '',
-				placeholder: '42a',
+				placeholder: 'e.g. 42a',
 			},
 			{
 				displayName: 'Latitude',
@@ -451,28 +485,28 @@ export const facilityFields: INodeProperties[] = [
 				name: 'postalCode',
 				type: 'string',
 				default: '',
-				placeholder: '40764',
+				placeholder: 'e.g. 40764',
 			},
 			{
 				displayName: 'Province',
 				name: 'province',
 				type: 'string',
 				default: '',
-				placeholder: 'NRW',
+				placeholder: 'e.g. NRW',
 			},
 			{
 				displayName: 'Street',
 				name: 'street',
 				type: 'string',
 				default: '',
-				placeholder: 'Hauptstr.',
+				placeholder: 'e.g. Hauptstr.',
 			},
 			{
 				displayName: 'Time Zone ID',
 				name: 'timeZoneId',
 				type: 'string',
 				default: '',
-				placeholder: 'Europe/Berlin',
+				placeholder: 'e.g. Europe/Berlin',
 				description: 'IANA time zone identifier. If unset, resolved from the address automatically.',
 			},
 		],
@@ -523,7 +557,7 @@ export const facilityFields: INodeProperties[] = [
 				name: 'additionalAddressInfo',
 				type: 'string',
 				default: '',
-				placeholder: 'to care of: Mrs. Müller',
+				placeholder: 'e.g. c/o Jane Doe',
 			},
 			{
 				displayName: 'Custom Attributes (JSON)',
@@ -555,14 +589,14 @@ export const facilityFields: INodeProperties[] = [
 				name: 'province',
 				type: 'string',
 				default: '',
-				placeholder: 'NRW',
+				placeholder: 'e.g. NRW',
 			},
 			{
 				displayName: 'Time Zone ID',
 				name: 'timeZoneId',
 				type: 'string',
 				default: '',
-				placeholder: 'Europe/Berlin',
+				placeholder: 'e.g. Europe/Berlin',
 				description:
 					'IANA time zone identifier. If unset, the time zone is resolved from the address automatically.',
 			},
@@ -587,7 +621,7 @@ export const facilityFields: INodeProperties[] = [
 						type: 'string',
 						required: true,
 						default: '',
-						placeholder: '+49 151 12345678',
+						placeholder: 'e.g. +49 151 12345678',
 					},
 					{
 						displayName: 'Type',
@@ -605,7 +639,7 @@ export const facilityFields: INodeProperties[] = [
 						name: 'label',
 						type: 'string',
 						default: '',
-						placeholder: 'business',
+						placeholder: 'e.g. business',
 					},
 				],
 			},
@@ -630,7 +664,7 @@ export const facilityFields: INodeProperties[] = [
 						type: 'string',
 						required: true,
 						default: '',
-						placeholder: 'store@example.com',
+						placeholder: 'e.g. store@example.com',
 					},
 					{
 						displayName: 'Recipient',
@@ -680,7 +714,7 @@ export const facilityFields: INodeProperties[] = [
 				name: 'roleDescription',
 				type: 'string',
 				default: '',
-				placeholder: 'Manager, Supervisor, Teamleader, etc.',
+				placeholder: 'e.g. Manager',
 			},
 		],
 	},
@@ -828,7 +862,7 @@ export const facilityFields: INodeProperties[] = [
 						type: 'string',
 						required: true,
 						default: '',
-						placeholder: 'Public holiday',
+						placeholder: 'e.g. Public holiday',
 					},
 					{
 						displayName: 'Recurrence',
@@ -898,7 +932,7 @@ export const facilityFields: INodeProperties[] = [
 				name: 'currency',
 				type: 'string',
 				default: 'EUR',
-				placeholder: 'EUR',
+				placeholder: 'e.g. EUR',
 				description: 'Currency as an ISO 4217 code',
 			},
 			{
@@ -1000,7 +1034,7 @@ export const facilityFields: INodeProperties[] = [
 				name: 'tenantFacilityId',
 				type: 'string',
 				default: '',
-				placeholder: 'K12345',
+				placeholder: 'e.g. K12345',
 				description: "The ID of the facility in the tenant's own system",
 			},
 		],
@@ -1052,7 +1086,7 @@ export const facilityFields: INodeProperties[] = [
 				name: 'tenantFacilityId',
 				type: 'string',
 				default: '',
-				placeholder: 'K12345',
+				placeholder: 'e.g. K12345',
 				description: "The ID of the facility in the tenant's own system",
 			},
 		],

@@ -167,7 +167,7 @@ export class FulfillmenttoolsTrigger implements INodeType {
 				name: 'subscriptionName',
 				type: 'string',
 				default: '',
-				placeholder: 'n8n Order Modified',
+				placeholder: 'e.g. n8n Order Modified',
 				description:
 					'Optional name for the subscription in fulfillmenttools. Defaults to "n8n &lt;event&gt;".',
 			},

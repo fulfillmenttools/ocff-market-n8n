@@ -1,5 +1,5 @@
 {
-	"node": "n8n-nodes-base.fulfillmenttools",
+	"node": "@fulfillmenttools/n8n-nodes-fulfillmenttools.fulfillmenttools",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Sales", "Miscellaneous"],

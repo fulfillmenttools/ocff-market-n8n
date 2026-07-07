@@ -1,9 +1,12 @@
 {
-	"name": "n8n-nodes-fulfillmenttools",
+	"name": "@fulfillmenttools/n8n-nodes-fulfillmenttools",
 	"version": "0.1.0",
 	"description": "n8n community nodes for the fulfillmenttools REST API",
 	"license": "MIT",
 	"homepage": "https://docs.fulfillmenttools.com/documentation",
+	"engines": {
+		"node": ">=20.15"
+	},
 	"keywords": [
 		"n8n-community-node-package",
 		"fulfillmenttools",
@@ -33,6 +36,9 @@
 	"files": [
 		"dist"
 	],
+	"publishConfig": {
+		"access": "public"
+	},
 	"n8n": {
 		"n8nNodesApiVersion": 1,
 		"strict": true,
@@ -45,7 +51,7 @@
 		]
 	},
 	"devDependencies": {
-		"@n8n/node-cli": "*",
+		"@n8n/node-cli": ">=0.23.0",
 		"eslint": "9.32.0",
 		"prettier": "3.6.2",
 		"release-it": "^19.0.4",

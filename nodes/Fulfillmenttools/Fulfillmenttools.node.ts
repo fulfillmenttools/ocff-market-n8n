@@ -1,7 +1,9 @@
 import type {
 	IDataObject,
 	IExecuteFunctions,
+	ILoadOptionsFunctions,
 	INodeExecutionData,
+	INodeListSearchResult,
 	INodeType,
 	INodeTypeDescription,
 	JsonObject,
@@ -12,6 +14,7 @@ import {
 	buildManagedFacilityForCreation,
 	buildManagedFacilityForModification,
 	buildSupplierForCreation,
+	simplifyFacility,
 } from './FacilityFunctions';
 import {
 	fulfillmenttoolsApiRequest,
@@ -61,6 +64,30 @@ export class Fulfillmenttools implements INodeType {
 		],
 	};
 
+	methods = {
+		listSearch: {
+			async searchFacilities(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const facilities = await fulfillmenttoolsApiRequestAllItems.call(
+					this,
+					'/api/facilities',
+					'facilities',
+				);
+				const results = facilities
+					.map((facility) => ({
+						name: (facility.name as string) || (facility.id as string),
+						value: facility.id as string,
+					}))
+					.filter(
+						(option) => !filter || option.name.toLowerCase().includes(filter.toLowerCase()),
+					);
+				return { results };
+			},
+		},
+	};
+
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
@@ -92,7 +119,9 @@ export class Fulfillmenttools implements INodeType {
 							body,
 						)) as IDataObject;
 					} else if (operation === 'get') {
-						const facilityId = this.getNodeParameter('facilityId', i) as string;
+						const facilityId = this.getNodeParameter('facilityId', i, '', {
+							extractValue: true,
+						}) as string;
 
 						responseData = (await fulfillmenttoolsApiRequest.call(
 							this,
@@ -129,7 +158,9 @@ export class Fulfillmenttools implements INodeType {
 							responseData = ((response.facilities as IDataObject[]) ?? []).slice(0, limit);
 						}
 					} else if (operation === 'update') {
-						const facilityId = this.getNodeParameter('facilityId', i) as string;
+						const facilityId = this.getNodeParameter('facilityId', i, '', {
+							extractValue: true,
+						}) as string;
 						const body = buildManagedFacilityForModification(this, i);
 
 						responseData = (await fulfillmenttoolsApiRequest.call(
@@ -139,7 +170,9 @@ export class Fulfillmenttools implements INodeType {
 							body,
 						)) as IDataObject;
 					} else if (operation === 'delete') {
-						const facilityId = this.getNodeParameter('facilityId', i) as string;
+						const facilityId = this.getNodeParameter('facilityId', i, '', {
+							extractValue: true,
+						}) as string;
 						const forceDeletion = this.getNodeParameter('forceDeletion', i, false) as boolean;
 
 						await fulfillmenttoolsApiRequest.call(
@@ -149,7 +182,7 @@ export class Fulfillmenttools implements INodeType {
 							{},
 							forceDeletion ? { forceDeletion: true } : {},
 						);
-						responseData = { success: true, facilityId };
+						responseData = { deleted: true };
 					} else {
 						throw new NodeOperationError(
 							this.getNode(),
@@ -163,6 +196,15 @@ export class Fulfillmenttools implements INodeType {
 						`The resource "${resource}" is not supported`,
 						{ itemIndex: i },
 					);
+				}
+
+				if (
+					(operation === 'get' || operation === 'getAll') &&
+					(this.getNodeParameter('simplify', i, false) as boolean)
+				) {
+					responseData = Array.isArray(responseData)
+						? responseData.map((facility) => simplifyFacility(facility))
+						: simplifyFacility(responseData);
 				}
 
 				const executionData = this.helpers.constructExecutionMetaData(

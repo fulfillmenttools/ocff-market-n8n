@@ -4,13 +4,13 @@ This is an [n8n](https://n8n.io) community node package for the
 [fulfillmenttools](https://fulfillmenttools.com) REST API. It lets you manage
 your fulfillmenttools tenant directly from n8n workflows.
 
-[Installation](#installation) · [Operations](#operations) · [Credentials](#credentials) · [Development](#development) · [Resources](#resources)
+[Installation](#installation) · [Operations](#operations) · [Trigger](#trigger) · [Credentials](#credentials) · [Development](#development) · [Resources](#resources)
 
 ## Installation
 
 Follow the
 [community nodes installation guide](https://docs.n8n.io/integrations/community-nodes/installation/)
-and use the package name `n8n-nodes-fulfillmenttools`.
+and use the package name `@fulfillmenttools/n8n-nodes-fulfillmenttools`.
 
 > Unverified community nodes can only be installed on self-hosted n8n. On n8n
 > Cloud the package must first be published and verified by n8n.
@@ -19,9 +19,49 @@ and use the package name `n8n-nodes-fulfillmenttools`.
 
 ### Facility
 
-- **Create** — creates a managed facility (`POST /api/facilities`). Required:
-  name and address (company name, street, city, postal code, country). Optional:
-  tenant facility ID, status, custom attributes, and additional address fields.
+- **Create Managed Facility** (`POST /api/facilities`) — creates a
+  `MANAGED_FACILITY`. Required: name and address (company name, street, city,
+  postal code, country). Optional: contact, phone/email addresses, picking
+  methods, services, picking times, scanning rules, closing days, tags,
+  operative cost, coordinates/time zone, and additional fields (tenant facility
+  ID, status, location type, capacity, fulfillment buffer, custom attributes).
+- **Create Supplier Facility** (`POST /api/facilities`) — creates a `SUPPLIER`.
+  Required: name, company name, country. Optional: address details,
+  phone/email addresses, tags, operative cost, status, tenant facility ID,
+  custom attributes.
+- **Get** (`GET /api/facilities/{id}`) — retrieves a single facility. Select it
+  **From list** or **By ID** (a facility ID or a `tenantFacilityId` URN). Supports
+  **Simplify**.
+- **Get Many** (`GET /api/facilities`) — retrieves many facilities with optional
+  filters (order by, status, type, tenant facility ID), **Return All** /
+  **Limit**, and **Simplify**.
+- **Update** (`PATCH /api/facilities/{id}`) — updates a facility. Requires the
+  current **Version** (optimistic locking — get it first with **Get**). Exposes
+  common fields plus a raw-JSON field for advanced properties.
+- **Delete** (`DELETE /api/facilities/{id}`) — deletes a facility. Optional
+  **Force Deletion** to cascade without pre-condition checks. Returns
+  `{ "deleted": true }`.
+
+## Trigger
+
+The **fulfillmenttools Trigger** node starts a workflow when a tenant event is
+delivered to its webhook. On activation it registers a `WEBHOOK` subscription in
+fulfillmenttools (`POST /api/subscriptions`); on deactivation it removes the
+subscription. Pick one **Event** to subscribe to and optionally name the
+subscription.
+
+Supported events span order, pick job, pack job, stow job, handover job,
+shipment, parcel, routing plan, return, inventory/stock, listing, storage
+location, inbound delivery/process, facility, facility group, service job,
+expiry entity, external action, process, and user lifecycle events — see the
+node's Event dropdown for the full list. See the
+[fulfillmenttools eventing docs](https://docs.fulfillmenttools.com/documentation/getting-started/eventing)
+for details.
+
+> Webhook triggers need a callback URL reachable from fulfillmenttools. On n8n
+> Cloud this is automatic. For local development, expose n8n with a public URL
+> (the bundled `npm run dev:local` starts a Cloudflare tunnel and wires
+> `WEBHOOK_URL`).
 
 ## Credentials
 

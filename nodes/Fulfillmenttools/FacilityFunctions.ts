@@ -16,6 +16,32 @@ function parseJsonParam(
 	}
 }
 
+/**
+ * Reduce a facility response to a small set of the most useful fields, for the
+ * node's "Simplify" option (facility payloads have far more than 10 fields).
+ */
+export function simplifyFacility(facility: IDataObject): IDataObject {
+	const address = (facility.address as IDataObject) ?? {};
+	return {
+		id: facility.id,
+		name: facility.name,
+		tenantFacilityId: facility.tenantFacilityId,
+		status: facility.status,
+		type: facility.type,
+		locationType: facility.locationType,
+		address: {
+			companyName: address.companyName,
+			street: address.street,
+			houseNumber: address.houseNumber,
+			postalCode: address.postalCode,
+			city: address.city,
+			country: address.country,
+		},
+		created: facility.created,
+		lastModified: facility.lastModified,
+	};
+}
+
 function isSet(value: unknown): boolean {
 	return value !== undefined && value !== null && value !== '';
 }
