@@ -58,6 +58,21 @@ and use the package name `@fulfillmenttools/n8n-nodes-fulfillmenttools`.
   preferred handling time and custom attributes, plus a raw-JSON field for
   advanced properties (consumer, order line items, pricing).
 
+### Carrier
+
+- **Create** (`POST /api/carriers`) — creates a carrier. Required: key (the CEP
+  integration, e.g. `DHL_V2`) and name. Optional: status, logo URL, product
+  value needed, default parcel dimensions, plus a raw-JSON field for advanced
+  properties (credentials, parcel label classifications).
+- **Get** (`GET /api/carriers/{id}`) — retrieves a single carrier. Select it
+  **From list** or **By ID**. Supports **Simplify**.
+- **Get Many** (`GET /api/carriers`) — retrieves many carriers with **Return
+  All** / **Limit** and **Simplify**.
+- **Update** (`PATCH /api/carriers/{id}`) — updates a carrier. Requires the
+  current **Version** (optimistic locking — get it first with **Get**). Exposes
+  name, status, delivery type, lifecycle, logo URL, product value needed and
+  default parcel dimensions, plus a raw-JSON field for advanced properties.
+
 ## Trigger
 
 The **fulfillmenttools Trigger** node starts a workflow when a tenant event is

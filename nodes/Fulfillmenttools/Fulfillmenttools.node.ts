@@ -21,7 +21,19 @@ import {
 	fulfillmenttoolsApiRequestAllItems,
 } from './GenericFunctions';
 import { buildOrderForCreation, buildOrderForUpdate, simplifyOrder } from './OrderFunctions';
-import { facilityFields, facilityOperations, orderFields, orderOperations } from './descriptions';
+import {
+	buildCarrierForCreation,
+	buildCarrierPatchActions,
+	simplifyCarrier,
+} from './CarrierFunctions';
+import {
+	carrierFields,
+	carrierOperations,
+	facilityFields,
+	facilityOperations,
+	orderFields,
+	orderOperations,
+} from './descriptions';
 
 export class Fulfillmenttools implements INodeType {
 	description: INodeTypeDescription = {
@@ -52,6 +64,10 @@ export class Fulfillmenttools implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
+						name: 'Carrier',
+						value: 'carrier',
+					},
+					{
 						name: 'Facility',
 						value: 'facility',
 					},
@@ -70,6 +86,10 @@ export class Fulfillmenttools implements INodeType {
 			// Order
 			...orderOperations,
 			...orderFields,
+
+			// Carrier
+			...carrierOperations,
+			...carrierFields,
 		],
 	};
 
@@ -108,6 +128,26 @@ export class Fulfillmenttools implements INodeType {
 					.map((order) => ({
 						name: (order.tenantOrderId as string) || (order.id as string),
 						value: order.id as string,
+					}))
+					.filter(
+						(option) => !filter || option.name.toLowerCase().includes(filter.toLowerCase()),
+					);
+				return { results };
+			},
+
+			async searchCarriers(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const carriers = await fulfillmenttoolsApiRequestAllItems.call(
+					this,
+					'/api/carriers',
+					'carriers',
+				);
+				const results = carriers
+					.map((carrier) => ({
+						name: (carrier.name as string) || (carrier.id as string),
+						value: carrier.id as string,
 					}))
 					.filter(
 						(option) => !filter || option.name.toLowerCase().includes(filter.toLowerCase()),
@@ -285,6 +325,65 @@ export class Fulfillmenttools implements INodeType {
 							{ itemIndex: i },
 						);
 					}
+				} else if (resource === 'carrier') {
+					if (operation === 'create') {
+						const body = buildCarrierForCreation(this, i);
+
+						responseData = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'POST',
+							'/api/carriers',
+							body,
+						)) as IDataObject;
+					} else if (operation === 'get') {
+						const carrierId = this.getNodeParameter('carrierId', i, '', {
+							extractValue: true,
+						}) as string;
+
+						responseData = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'GET',
+							`/api/carriers/${encodeURIComponent(carrierId)}`,
+						)) as IDataObject;
+					} else if (operation === 'getAll') {
+						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
+
+						if (returnAll) {
+							responseData = await fulfillmenttoolsApiRequestAllItems.call(
+								this,
+								'/api/carriers',
+								'carriers',
+							);
+						} else {
+							const limit = this.getNodeParameter('limit', i) as number;
+							const response = (await fulfillmenttoolsApiRequest.call(
+								this,
+								'GET',
+								'/api/carriers',
+								{},
+								{ size: limit },
+							)) as IDataObject;
+							responseData = ((response.carriers as IDataObject[]) ?? []).slice(0, limit);
+						}
+					} else if (operation === 'update') {
+						const carrierId = this.getNodeParameter('carrierId', i, '', {
+							extractValue: true,
+						}) as string;
+						const body = buildCarrierPatchActions(this, i);
+
+						responseData = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'PATCH',
+							`/api/carriers/${encodeURIComponent(carrierId)}`,
+							body,
+						)) as IDataObject;
+					} else {
+						throw new NodeOperationError(
+							this.getNode(),
+							`The operation "${operation}" is not supported for resource "${resource}"`,
+							{ itemIndex: i },
+						);
+					}
 				} else {
 					throw new NodeOperationError(
 						this.getNode(),
@@ -297,7 +396,12 @@ export class Fulfillmenttools implements INodeType {
 					(operation === 'get' || operation === 'getAll') &&
 					(this.getNodeParameter('simplify', i, false) as boolean)
 				) {
-					const simplify = resource === 'order' ? simplifyOrder : simplifyFacility;
+					const simplifiers: { [key: string]: (entity: IDataObject) => IDataObject } = {
+						facility: simplifyFacility,
+						order: simplifyOrder,
+						carrier: simplifyCarrier,
+					};
+					const simplify = simplifiers[resource] ?? ((entity: IDataObject) => entity);
 					responseData = Array.isArray(responseData)
 						? responseData.map((entity) => simplify(entity))
 						: simplify(responseData);
