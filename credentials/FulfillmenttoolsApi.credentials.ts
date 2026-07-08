@@ -28,7 +28,7 @@ export class FulfillmenttoolsApi implements ICredentialType {
 
 	documentationUrl = 'https://docs.fulfillmenttools.com/documentation';
 
-	icon: Icon = { light: 'file:fftFav.svg', dark: 'file:fftFav.dark.svg' };
+	icon: Icon = { light: 'file:fftBrand.svg', dark: 'file:fftBrand.dark.svg' };
 
 	properties: INodeProperties[] = [
 		{

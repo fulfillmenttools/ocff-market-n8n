@@ -17,7 +17,7 @@ export class FulfillmenttoolsTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'fulfillmenttools Trigger',
 		name: 'fulfillmenttoolsTrigger',
-		icon: { light: 'file:fftFav.svg', dark: 'file:fftFav.dark.svg' },
+		icon: { light: 'file:fftBrand.svg', dark: 'file:fftBrand.dark.svg' },
 		group: ['trigger'],
 		version: 1,
 		subtitle: '={{$parameter["event"]}}',
