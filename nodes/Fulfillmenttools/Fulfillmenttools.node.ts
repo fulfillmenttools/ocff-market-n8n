@@ -32,12 +32,19 @@ import {
 	simplifyFacilityCarrierConnection,
 } from './FacilityCarrierConnectionFunctions';
 import {
+	buildInboundProcessForCreation,
+	buildInboundProcessForPatch,
+	simplifyInboundProcess,
+} from './InboundFunctions';
+import {
 	carrierFields,
 	carrierOperations,
 	facilityCarrierConnectionFields,
 	facilityCarrierConnectionOperations,
 	facilityFields,
 	facilityOperations,
+	inboundFields,
+	inboundOperations,
 	orderFields,
 	orderOperations,
 } from './descriptions';
@@ -83,6 +90,10 @@ export class Fulfillmenttools implements INodeType {
 						value: 'facilityCarrierConnection',
 					},
 					{
+						name: 'Inbound',
+						value: 'inbound',
+					},
+					{
 						name: 'Order',
 						value: 'order',
 					},
@@ -105,6 +116,10 @@ export class Fulfillmenttools implements INodeType {
 			// Facility Carrier Connection
 			...facilityCarrierConnectionOperations,
 			...facilityCarrierConnectionFields,
+
+			// Inbound
+			...inboundOperations,
+			...inboundFields,
 		],
 	};
 
@@ -163,6 +178,26 @@ export class Fulfillmenttools implements INodeType {
 					.map((carrier) => ({
 						name: (carrier.name as string) || (carrier.id as string),
 						value: carrier.id as string,
+					}))
+					.filter(
+						(option) => !filter || option.name.toLowerCase().includes(filter.toLowerCase()),
+					);
+				return { results };
+			},
+
+			async searchInboundProcesses(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const processes = await fulfillmenttoolsApiRequestAllItems.call(
+					this,
+					'/api/inboundprocesses',
+					'inboundProcesses',
+				);
+				const results = processes
+					.map((process) => ({
+						name: (process.tenantInboundProcessId as string) || (process.id as string),
+						value: process.id as string,
 					}))
 					.filter(
 						(option) => !filter || option.name.toLowerCase().includes(filter.toLowerCase()),
@@ -448,6 +483,88 @@ export class Fulfillmenttools implements INodeType {
 							);
 						}
 					}
+				} else if (resource === 'inbound') {
+					if (operation === 'create') {
+						const body = buildInboundProcessForCreation(this, i);
+
+						responseData = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'POST',
+							'/api/inboundprocesses',
+							body,
+						)) as IDataObject;
+					} else if (operation === 'get') {
+						const inboundProcessId = this.getNodeParameter('inboundProcessId', i, '', {
+							extractValue: true,
+						}) as string;
+
+						responseData = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'GET',
+							`/api/inboundprocesses/${encodeURIComponent(inboundProcessId)}`,
+						)) as IDataObject;
+					} else if (operation === 'getAll') {
+						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
+						const filters = this.getNodeParameter('filters', i, {}) as IDataObject;
+
+						const qs: IDataObject = {};
+						if (filters.sort) qs.sort = filters.sort;
+						if (filters.facilityRef) qs.facilityRef = filters.facilityRef;
+						if (filters.scannableCode) qs.scannableCode = filters.scannableCode;
+						if (filters.searchTerm) qs.searchTerm = filters.searchTerm;
+						if (Array.isArray(filters.status) && filters.status.length) qs.status = filters.status;
+
+						if (returnAll) {
+							responseData = await fulfillmenttoolsApiRequestAllItems.call(
+								this,
+								'/api/inboundprocesses',
+								'inboundProcesses',
+								qs,
+							);
+						} else {
+							const limit = this.getNodeParameter('limit', i) as number;
+							qs.size = limit;
+							const response = (await fulfillmenttoolsApiRequest.call(
+								this,
+								'GET',
+								'/api/inboundprocesses',
+								{},
+								qs,
+							)) as IDataObject;
+							responseData = ((response.inboundProcesses as IDataObject[]) ?? []).slice(0, limit);
+						}
+					} else if (operation === 'update') {
+						const inboundProcessId = this.getNodeParameter('inboundProcessId', i, '', {
+							extractValue: true,
+						}) as string;
+						const body = buildInboundProcessForPatch(this, i);
+						const path = `/api/inboundprocesses/${encodeURIComponent(inboundProcessId)}`;
+
+						// PATCH returns no body; fetch the updated entity to return it.
+						await fulfillmenttoolsApiRequest.call(this, 'PATCH', path, body);
+						responseData = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'GET',
+							path,
+						)) as IDataObject;
+					} else if (operation === 'delete') {
+						const inboundProcessId = this.getNodeParameter('inboundProcessId', i, '', {
+							extractValue: true,
+						}) as string;
+
+						await fulfillmenttoolsApiRequest.call(
+							this,
+							'DELETE',
+							`/api/inboundprocesses/${encodeURIComponent(inboundProcessId)}`,
+						);
+						responseData = { deleted: true };
+					} else {
+						throw new NodeOperationError(
+							this.getNode(),
+							`The operation "${operation}" is not supported for resource "${resource}"`,
+							{ itemIndex: i },
+						);
+					}
 				} else {
 					throw new NodeOperationError(
 						this.getNode(),
@@ -465,6 +582,7 @@ export class Fulfillmenttools implements INodeType {
 						order: simplifyOrder,
 						carrier: simplifyCarrier,
 						facilityCarrierConnection: simplifyFacilityCarrierConnection,
+						inbound: simplifyInboundProcess,
 					};
 					const simplify = simplifiers[resource] ?? ((entity: IDataObject) => entity);
 					responseData = Array.isArray(responseData)

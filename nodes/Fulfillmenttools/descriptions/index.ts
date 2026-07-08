@@ -5,3 +5,4 @@ export {
 	facilityCarrierConnectionOperations,
 	facilityCarrierConnectionFields,
 } from './FacilityCarrierConnectionDescription';
+export { inboundOperations, inboundFields } from './InboundDescription';

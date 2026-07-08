@@ -91,6 +91,26 @@ a **Carrier**.
   the current **Version** (optimistic locking — get it first with **Get**).
   Exposes name and status, plus a raw-JSON field for advanced properties.
 
+### Inbound
+
+Inbound processes (`/api/inboundprocesses`).
+
+- **Create** (`POST /api/inboundprocesses`) — creates an inbound process.
+  Required: facility. Optional: tenant inbound process ID, on hold, scannable
+  codes, custom attributes, plus a raw-JSON field for advanced properties
+  (purchase order, receipts).
+- **Get** (`GET /api/inboundprocesses/{id}`) — retrieves a single inbound
+  process. Select it **From list** or **By ID**. Supports **Simplify**.
+- **Get Many** (`GET /api/inboundprocesses`) — retrieves many inbound processes
+  with optional filters (sort, status, facility ref, scannable code, search
+  term), **Return All** / **Limit**, and **Simplify**.
+- **Update** (`PATCH /api/inboundprocesses/{id}`) — updates an inbound process.
+  Requires the current **Version** (optimistic locking — get it first with
+  **Get**). Exposes on hold, scannable codes and custom attributes. Returns the
+  updated process.
+- **Delete** (`DELETE /api/inboundprocesses/{id}`) — deletes an inbound process.
+  Returns `{ "deleted": true }`.
+
 ## Trigger
 
 The **fulfillmenttools Trigger** node starts a workflow when a tenant event is
