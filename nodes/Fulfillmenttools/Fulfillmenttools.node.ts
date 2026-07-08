@@ -27,7 +27,7 @@ export class Fulfillmenttools implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'fulfillmenttools',
 		name: 'fulfillmenttools',
-		icon: { light: 'file:ftLogo.svg', dark: 'file:ftLogo.dark.svg' },
+		icon: { light: 'file:fftFav.svg', dark: 'file:fftFav.dark.svg' },
 		group: ['transform'],
 		version: [1],
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
