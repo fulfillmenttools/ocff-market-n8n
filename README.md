@@ -42,6 +42,22 @@ and use the package name `@fulfillmenttools/n8n-nodes-fulfillmenttools`.
   **Force Deletion** to cascade without pre-condition checks. Returns
   `{ "deleted": true }`.
 
+### Order
+
+- **Create** (`POST /api/orders`) — creates an order. Required: order date and
+  one or more order line items (tenant article ID, title, quantity). Optional:
+  tenant order ID, consumer (ID, email, addresses), status, custom attributes,
+  and a raw-JSON field for advanced properties (delivery preferences, payment
+  info, source, stickers, pricing).
+- **Get** (`GET /api/orders/{id}`) — retrieves a single order. Select it **From
+  list** or **By ID**. Supports **Simplify**.
+- **Get Many** (`GET /api/orders`) — retrieves many orders with optional filters
+  (tenant order ID, consumer ID), **Return All** / **Limit**, and **Simplify**.
+- **Update** (`PATCH /api/orders/{id}`) — updates an order. Requires the current
+  **Version** (optimistic locking — get it first with **Get**). Exposes comment,
+  preferred handling time and custom attributes, plus a raw-JSON field for
+  advanced properties (consumer, order line items, pricing).
+
 ## Trigger
 
 The **fulfillmenttools Trigger** node starts a workflow when a tenant event is

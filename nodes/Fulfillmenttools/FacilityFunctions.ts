@@ -1,7 +1,7 @@
 import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
-function parseJsonParam(
+export function parseJsonParam(
 	ctx: IExecuteFunctions,
 	itemIndex: number,
 	raw: unknown,
@@ -42,7 +42,7 @@ export function simplifyFacility(facility: IDataObject): IDataObject {
 	};
 }
 
-function isSet(value: unknown): boolean {
+export function isSet(value: unknown): boolean {
 	return value !== undefined && value !== null && value !== '';
 }
 
