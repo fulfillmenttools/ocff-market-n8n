@@ -27,8 +27,15 @@ import {
 	simplifyCarrier,
 } from './CarrierFunctions';
 import {
+	buildFacilityCarrierConnectionForCreation,
+	buildFacilityCarrierConnectionForModification,
+	simplifyFacilityCarrierConnection,
+} from './FacilityCarrierConnectionFunctions';
+import {
 	carrierFields,
 	carrierOperations,
+	facilityCarrierConnectionFields,
+	facilityCarrierConnectionOperations,
 	facilityFields,
 	facilityOperations,
 	orderFields,
@@ -72,6 +79,10 @@ export class Fulfillmenttools implements INodeType {
 						value: 'facility',
 					},
 					{
+						name: 'Facility Carrier Connection',
+						value: 'facilityCarrierConnection',
+					},
+					{
 						name: 'Order',
 						value: 'order',
 					},
@@ -90,6 +101,10 @@ export class Fulfillmenttools implements INodeType {
 			// Carrier
 			...carrierOperations,
 			...carrierFields,
+
+			// Facility Carrier Connection
+			...facilityCarrierConnectionOperations,
+			...facilityCarrierConnectionFields,
 		],
 	};
 
@@ -384,6 +399,55 @@ export class Fulfillmenttools implements INodeType {
 							{ itemIndex: i },
 						);
 					}
+				} else if (resource === 'facilityCarrierConnection') {
+					const facilityId = this.getNodeParameter('facilityId', i, '', {
+						extractValue: true,
+					}) as string;
+					const basePath = `/api/facilities/${encodeURIComponent(facilityId)}/carriers`;
+
+					if (operation === 'getAll') {
+						const response = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'GET',
+							basePath,
+						)) as IDataObject;
+						responseData = (response.carriers as IDataObject[]) ?? [];
+					} else {
+						const carrierRef = this.getNodeParameter('carrierRef', i, '', {
+							extractValue: true,
+						}) as string;
+						const path = `${basePath}/${encodeURIComponent(carrierRef)}`;
+
+						if (operation === 'get') {
+							responseData = (await fulfillmenttoolsApiRequest.call(
+								this,
+								'GET',
+								path,
+							)) as IDataObject;
+						} else if (operation === 'create') {
+							const body = buildFacilityCarrierConnectionForCreation(this, i);
+							responseData = (await fulfillmenttoolsApiRequest.call(
+								this,
+								'POST',
+								path,
+								body,
+							)) as IDataObject;
+						} else if (operation === 'update') {
+							const body = buildFacilityCarrierConnectionForModification(this, i);
+							responseData = (await fulfillmenttoolsApiRequest.call(
+								this,
+								'PUT',
+								path,
+								body,
+							)) as IDataObject;
+						} else {
+							throw new NodeOperationError(
+								this.getNode(),
+								`The operation "${operation}" is not supported for resource "${resource}"`,
+								{ itemIndex: i },
+							);
+						}
+					}
 				} else {
 					throw new NodeOperationError(
 						this.getNode(),
@@ -400,6 +464,7 @@ export class Fulfillmenttools implements INodeType {
 						facility: simplifyFacility,
 						order: simplifyOrder,
 						carrier: simplifyCarrier,
+						facilityCarrierConnection: simplifyFacilityCarrierConnection,
 					};
 					const simplify = simplifiers[resource] ?? ((entity: IDataObject) => entity);
 					responseData = Array.isArray(responseData)

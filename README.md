@@ -73,6 +73,24 @@ and use the package name `@fulfillmenttools/n8n-nodes-fulfillmenttools`.
   name, status, delivery type, lifecycle, logo URL, product value needed and
   default parcel dimensions, plus a raw-JSON field for advanced properties.
 
+### Facility Carrier Connection
+
+Connects a carrier to a facility (`/api/facilities/{facilityId}/carriers`). All
+operations take a **Facility** (From list or by ID); get/create/update also take
+a **Carrier**.
+
+- **Create** (`POST …/carriers/{carrierRef}`) — connects a carrier to the
+  facility. Optional: name, status, plus a raw-JSON field for advanced
+  properties (configuration, credentials, cutoff times, delivery areas, valid
+  delivery targets, parcel label classifications, tags).
+- **Get** (`GET …/carriers/{carrierRef}`) — retrieves a single connection.
+  Supports **Simplify**.
+- **Get Many** (`GET …/carriers`) — retrieves all carrier connections of the
+  facility. Supports **Simplify**.
+- **Update** (`PUT …/carriers/{carrierRef}`) — updates a connection. Requires
+  the current **Version** (optimistic locking — get it first with **Get**).
+  Exposes name and status, plus a raw-JSON field for advanced properties.
+
 ## Trigger
 
 The **fulfillmenttools Trigger** node starts a workflow when a tenant event is
