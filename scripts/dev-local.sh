@@ -50,7 +50,14 @@ fi
 
 # --- link the package into n8n's custom-extensions folder (idempotent) -------
 mkdir -p "$CUSTOM_DIR"
-ln -sfn "$PROJECT_DIR" "$CUSTOM_DIR/$PKG_NAME"
+# Remove any existing symlink that points to this project (handles package
+# renames, e.g. unscoped -> scoped) so the node is never loaded twice.
+find "$CUSTOM_DIR" -maxdepth 2 -type l 2>/dev/null | while read -r existing; do
+	if [ "$(readlink "$existing")" = "$PROJECT_DIR" ]; then rm -f "$existing"; fi
+done
+LINK_PATH="$CUSTOM_DIR/$PKG_NAME"
+mkdir -p "$(dirname "$LINK_PATH")"
+ln -sfn "$PROJECT_DIR" "$LINK_PATH"
 echo "🔗 Linked $PKG_NAME into $CUSTOM_DIR"
 
 # --- initial build -----------------------------------------------------------
