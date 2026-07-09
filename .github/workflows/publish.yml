@@ -78,7 +78,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          # Node 24 ships npm 11.x, required for npm provenance / OIDC trusted
+          # publishing (needs npm >= 11.5.1). 'lts/*' may resolve to Node that
+          # ships npm 10.x, which fails the provenance publish.
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
@@ -96,4 +99,4 @@ jobs:
           [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
           npm run release
         env:
-          NPM_TOKEN: $
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
