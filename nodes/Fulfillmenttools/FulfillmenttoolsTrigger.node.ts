@@ -245,15 +245,14 @@ export class FulfillmenttoolsTrigger implements INodeType {
 				const subscriptionId = staticData.subscriptionId as string | undefined;
 
 				if (subscriptionId) {
-					try {
-						await fulfillmenttoolsApiRequest.call(
-							this,
-							'DELETE',
-							`/api/subscriptions/${encodeURIComponent(subscriptionId)}`,
-						);
-					} catch {
-						return false;
-					}
+					// Let errors propagate: fulfillmenttoolsApiRequest converts HTTP
+					// failures into a NodeApiError that n8n surfaces to the user, so a
+					// failed unsubscribe is not silently swallowed.
+					await fulfillmenttoolsApiRequest.call(
+						this,
+						'DELETE',
+						`/api/subscriptions/${encodeURIComponent(subscriptionId)}`,
+					);
 					delete staticData.subscriptionId;
 				}
 				return true;
