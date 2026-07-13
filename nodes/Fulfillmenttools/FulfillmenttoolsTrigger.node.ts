@@ -6,7 +6,7 @@ import type {
 	IWebhookFunctions,
 	IWebhookResponseData,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { fulfillmenttoolsApiRequest } from './GenericFunctions';
 
@@ -229,7 +229,10 @@ export class FulfillmenttoolsTrigger implements INodeType {
 				)) as IDataObject;
 
 				if (!response.id) {
-					return false;
+					throw new NodeOperationError(
+						this.getNode(),
+						'fulfillmenttools did not return a subscription ID, so the event subscription could not be registered',
+					);
 				}
 
 				const staticData = this.getWorkflowStaticData('node');
