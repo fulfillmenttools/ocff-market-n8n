@@ -389,6 +389,7 @@ export const inboundFields: INodeProperties[] = [
 			{
 				name: 'item',
 				displayName: 'Line Item',
+				// eslint-disable-next-line n8n-nodes-base/node-param-fixed-collection-type-unsorted-items
 				values: [
 					{
 						displayName: 'Tenant Article ID',
@@ -420,6 +421,14 @@ export const inboundFields: INodeProperties[] = [
 						type: 'json',
 						default: '{}',
 						description: 'Free-form attributes stored on the line item',
+					},
+					{
+						displayName: 'Stock Properties (JSON)',
+						name: 'stockProperties',
+						type: 'json',
+						default: '{}',
+						description:
+							'Stock properties to set on the created stock, e.g. { "expiry": "2027-01-01", "batch": "B-42" }',
 					},
 				],
 			},
@@ -556,6 +565,14 @@ export const inboundFields: INodeProperties[] = [
 						type: 'string',
 						default: '',
 						description: 'A comment on the received item',
+					},
+					{
+						displayName: 'Stock Properties (JSON)',
+						name: 'stockProperties',
+						type: 'json',
+						default: '{}',
+						description:
+							'Stock properties to set on the created stock, e.g. { "expiry": "2027-01-01", "batch": "B-42" }',
 					},
 				],
 			},

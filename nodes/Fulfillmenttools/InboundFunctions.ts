@@ -20,6 +20,11 @@ function commentsFrom(content: unknown): IDataObject[] {
 	return isSet(content) ? [{ content: content as string }] : [];
 }
 
+/** Return the object only if it has at least one key, else undefined. */
+function nonEmpty(obj: IDataObject | undefined): IDataObject | undefined {
+	return obj && Object.keys(obj).length > 0 ? obj : undefined;
+}
+
 /**
  * Assemble the optional `purchaseOrder` object of an inbound process. Returns
  * undefined when the user provided nothing. Throws if partially filled (the API
@@ -41,13 +46,14 @@ export function buildPurchaseOrder(
 			tenantArticleId: line.tenantArticleId,
 			quantity: buildQuantity(line.quantity, line.quantityUnit),
 		};
-		const customAttributes = parseJsonParam(
-			ctx,
-			itemIndex,
-			line.customAttributes,
-			'Purchase Order Line Item Custom Attributes',
+		const customAttributes = nonEmpty(
+			parseJsonParam(ctx, itemIndex, line.customAttributes, 'Purchase Order Line Item Custom Attributes'),
 		);
 		if (customAttributes) item.customAttributes = customAttributes;
+		const stockProperties = nonEmpty(
+			parseJsonParam(ctx, itemIndex, line.stockProperties, 'Purchase Order Line Item Stock Properties'),
+		);
+		if (stockProperties) item.stockProperties = stockProperties;
 		return item;
 	});
 
@@ -108,6 +114,10 @@ export function buildReceipt(ctx: IExecuteFunctions, itemIndex: number): IDataOb
 			comments: commentsFrom(received.comment),
 		};
 		if (isSet(received.storageLocationRef)) item.storageLocationRef = received.storageLocationRef;
+		const stockProperties = nonEmpty(
+			parseJsonParam(ctx, itemIndex, received.stockProperties, 'Received Item Stock Properties'),
+		);
+		if (stockProperties) item.stockProperties = stockProperties;
 		return item;
 	});
 
