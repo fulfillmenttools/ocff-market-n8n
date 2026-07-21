@@ -97,8 +97,14 @@ Inbound processes (`/api/inboundprocesses`).
 
 - **Create** (`POST /api/inboundprocesses`) — creates an inbound process.
   Required: facility. Optional: tenant inbound process ID, on hold, scannable
-  codes, custom attributes, plus a raw-JSON field for advanced properties
-  (purchase order, receipts).
+  codes, custom attributes, a structured **Purchase Order** (order date,
+  requested date, status, supplier) with **Purchase Order Line Items** (article,
+  quantity), and a single **Receipt** (received date, status) with **Received
+  Items** (article, accepted/rejected quantity). Multiple receipts remain
+  available via the raw-JSON field.
+- **Add Receipt** (`POST /api/inboundprocesses/{id}/receipts`) — adds a goods
+  receipt to an inbound process: received date, status, ASN ref, comment, and
+  received items (article, accepted/rejected quantity, storage location).
 - **Get** (`GET /api/inboundprocesses/{id}`) — retrieves a single inbound
   process. Select it **From list** or **By ID**. Supports **Simplify**.
 - **Get Many** (`GET /api/inboundprocesses`) — retrieves many inbound processes

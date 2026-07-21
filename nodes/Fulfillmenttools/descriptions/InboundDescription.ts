@@ -9,6 +9,14 @@ const showForInboundCreate = {
 	},
 };
 
+// Receipt fields are shared by Create (inline receipt) and Add Receipt.
+const showForInboundReceipt = {
+	show: {
+		resource: RESOURCE,
+		operation: ['create', 'addReceipt'],
+	},
+};
+
 /**
  * Operations available for the Inbound (inbound process) resource.
  */
@@ -20,6 +28,12 @@ export const inboundOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: { show: { resource: RESOURCE } },
 		options: [
+			{
+				name: 'Add Receipt',
+				value: 'addReceipt',
+				description: 'Add a receipt to an inbound process',
+				action: 'Add a receipt to an inbound process',
+			},
 			{
 				name: 'Create',
 				value: 'create',
@@ -71,7 +85,7 @@ export const inboundFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: RESOURCE,
-				operation: ['get', 'update', 'delete'],
+				operation: ['get', 'update', 'delete', 'addReceipt'],
 			},
 		},
 		description: 'The inbound process to operate on',
@@ -298,6 +312,257 @@ export const inboundFields: INodeProperties[] = [
 	},
 
 	// ----------------------------------
+	//   create — purchase order
+	// ----------------------------------
+	{
+		displayName: 'Purchase Order',
+		name: 'purchaseOrder',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: showForInboundCreate,
+		description:
+			'Purchase order for this inbound process. Requires an order date, requested date and at least one line item if set.',
+		options: [
+			{
+				displayName: 'Custom Attributes (JSON)',
+				name: 'customAttributes',
+				type: 'json',
+				default: '{}',
+				description: 'Free-form attributes stored on the purchase order',
+			},
+			{
+				displayName: 'Order Date',
+				name: 'orderDate',
+				type: 'dateTime',
+				default: '',
+				description: 'Date and time at which the order was placed',
+			},
+			{
+				displayName: 'Requested Date',
+				name: 'requestedDate',
+				type: 'dateTime',
+				default: '',
+				description:
+					'Date and time the order is expected to arrive (used when Requested Date Type is Time Point)',
+			},
+			{
+				displayName: 'Requested Date Type',
+				name: 'requestedDateType',
+				type: 'options',
+				default: 'TIME_POINT',
+				options: [
+					{ name: 'ASAP', value: 'ASAP' },
+					{ name: 'Time Point', value: 'TIME_POINT' },
+				],
+			},
+			{
+				displayName: 'Status',
+				name: 'status',
+				type: 'options',
+				default: 'OPEN',
+				options: [
+					{ name: 'Canceled', value: 'CANCELED' },
+					{ name: 'Open', value: 'OPEN' },
+				],
+			},
+			{
+				displayName: 'Supplier Name',
+				name: 'supplierName',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. Speedy Boxales Ltd.',
+				description: 'Name of the supplier',
+			},
+		],
+	},
+	{
+		displayName: 'Purchase Order Line Items',
+		name: 'purchaseOrderLineItems',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Line Item',
+		default: {},
+		displayOptions: showForInboundCreate,
+		description: 'Line items expected to be delivered',
+		options: [
+			{
+				name: 'item',
+				displayName: 'Line Item',
+				values: [
+					{
+						displayName: 'Tenant Article ID',
+						name: 'tenantArticleId',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. 4711',
+					},
+					{
+						displayName: 'Quantity',
+						name: 'quantity',
+						type: 'number',
+						required: true,
+						default: 1,
+						typeOptions: { minValue: 0 },
+					},
+					{
+						displayName: 'Quantity Unit',
+						name: 'quantityUnit',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. piece',
+						description: 'Unit of measurement; must match the listing measurementUnitKey if set',
+					},
+					{
+						displayName: 'Custom Attributes (JSON)',
+						name: 'customAttributes',
+						type: 'json',
+						default: '{}',
+						description: 'Free-form attributes stored on the line item',
+					},
+				],
+			},
+		],
+	},
+
+	// ----------------------------------
+	//   create / addReceipt — receipt
+	// ----------------------------------
+	{
+		displayName: 'Receipt',
+		name: 'receipt',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: showForInboundReceipt,
+		description:
+			'A goods receipt. Requires a received date and at least one received item if set.',
+		options: [
+			{
+				displayName: 'ASN Ref',
+				name: 'asnRef',
+				type: 'string',
+				default: '',
+				description: 'Maps this receipt to an ASN in the inbound process',
+			},
+			{
+				displayName: 'Comment',
+				name: 'comment',
+				type: 'string',
+				default: '',
+				description: 'A comment on the receipt',
+			},
+			{
+				displayName: 'Custom Attributes (JSON)',
+				name: 'customAttributes',
+				type: 'json',
+				default: '{}',
+				description: 'Free-form attributes stored on the receipt',
+			},
+			{
+				displayName: 'Received Date',
+				name: 'receivedDate',
+				type: 'dateTime',
+				default: '',
+				description: 'Date and time the items arrived at the facility',
+			},
+			{
+				displayName: 'Status',
+				name: 'status',
+				type: 'options',
+				default: 'FINISHED',
+				options: [
+					{
+						name: 'Finished',
+						value: 'FINISHED',
+						description: 'Receipt is booked and stock is created',
+					},
+					{
+						name: 'In Progress',
+						value: 'IN_PROGRESS',
+						description: 'Partial receipt, not yet booked',
+					},
+					{ name: 'Open', value: 'OPEN' },
+				],
+			},
+		],
+	},
+	{
+		displayName: 'Received Items',
+		name: 'receivedItems',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Received Item',
+		default: {},
+		displayOptions: showForInboundReceipt,
+		description: 'Items that arrived at the facility',
+		options: [
+			{
+				name: 'item',
+				displayName: 'Received Item',
+				// eslint-disable-next-line n8n-nodes-base/node-param-fixed-collection-type-unsorted-items
+				values: [
+					{
+						displayName: 'Tenant Article ID',
+						name: 'tenantArticleId',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. 4711',
+					},
+					{
+						displayName: 'Accepted Quantity',
+						name: 'acceptedQuantity',
+						type: 'number',
+						required: true,
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Quantity accepted; stock is created when the receipt is Finished',
+					},
+					{
+						displayName: 'Accepted Quantity Unit',
+						name: 'acceptedQuantityUnit',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. piece',
+					},
+					{
+						displayName: 'Rejected Quantity',
+						name: 'rejectedQuantity',
+						type: 'number',
+						required: true,
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Quantity rejected; defective stock is created when the receipt is Finished',
+					},
+					{
+						displayName: 'Rejected Quantity Unit',
+						name: 'rejectedQuantityUnit',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. piece',
+					},
+					{
+						displayName: 'Storage Location Ref',
+						name: 'storageLocationRef',
+						type: 'string',
+						default: '',
+						description: 'Storage location on which the stock was placed',
+					},
+					{
+						displayName: 'Comment',
+						name: 'comment',
+						type: 'string',
+						default: '',
+						description: 'A comment on the received item',
+					},
+				],
+			},
+		],
+	},
+
+	// ----------------------------------
 	//   update — fields
 	// ----------------------------------
 	{
@@ -349,10 +614,10 @@ export const inboundFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: RESOURCE,
-				operation: ['create', 'update'],
+				operation: ['create', 'update', 'addReceipt'],
 			},
 		},
 		description:
-			'Advanced: raw JSON merged into the request body for fields not listed above (e.g. purchaseOrder, receipts). See InboundProcessForCreation / InboundProcessForPatch in the API reference.',
+			'Advanced: raw JSON merged into the request body for fields not listed above (on Create e.g. additional receipts; on Add Receipt e.g. stock properties). See the InboundProcess schemas in the API reference.',
 	},
 ];

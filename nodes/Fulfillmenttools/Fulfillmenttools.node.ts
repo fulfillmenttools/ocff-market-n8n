@@ -34,6 +34,7 @@ import {
 import {
 	buildInboundProcessForCreation,
 	buildInboundProcessForPatch,
+	buildInboundReceiptForCreation,
 	simplifyInboundProcess,
 } from './InboundFunctions';
 import {
@@ -484,7 +485,19 @@ export class Fulfillmenttools implements INodeType {
 						}
 					}
 				} else if (resource === 'inbound') {
-					if (operation === 'create') {
+					if (operation === 'addReceipt') {
+						const inboundProcessId = this.getNodeParameter('inboundProcessId', i, '', {
+							extractValue: true,
+						}) as string;
+						const body = buildInboundReceiptForCreation(this, i);
+
+						responseData = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'POST',
+							`/api/inboundprocesses/${encodeURIComponent(inboundProcessId)}/receipts`,
+							body,
+						)) as IDataObject;
+					} else if (operation === 'create') {
 						const body = buildInboundProcessForCreation(this, i);
 
 						responseData = (await fulfillmenttoolsApiRequest.call(
