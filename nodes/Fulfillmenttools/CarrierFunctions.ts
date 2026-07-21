@@ -9,11 +9,63 @@ const PARCEL_DIMENSIONS = [
 	'defaultParcelWidthInCm',
 ] as const;
 
+const CLASSIFICATION_DIMENSIONS = ['height', 'length', 'width', 'weight', 'customWeight'] as const;
+
+/**
+ * Build the optional `parcelLabelClassifications` array from the structured
+ * fixedCollection. Each entry becomes `{ nameLocalized, dimensions, services }`.
+ * Returns undefined when the user added no classification.
+ */
+function buildCarrierClassifications(
+	ctx: IExecuteFunctions,
+	itemIndex: number,
+): IDataObject[] | undefined {
+	const input =
+		((ctx.getNodeParameter('parcelLabelClassifications', itemIndex, {}) as IDataObject)
+			.classification as IDataObject[]) ?? [];
+	if (input.length === 0) return undefined;
+
+	return input.map((entry) => {
+		const locale = isSet(entry.locale) ? (entry.locale as string) : 'en_US';
+		const dimensions: IDataObject = {};
+		for (const key of CLASSIFICATION_DIMENSIONS) {
+			if (isSet(entry[key])) dimensions[key] = entry[key];
+		}
+		const classification: IDataObject = {
+			nameLocalized: { [locale]: entry.name },
+			dimensions,
+		};
+		if (entry.bulkyGoods !== undefined) {
+			classification.services = { bulkyGoods: entry.bulkyGoods };
+		}
+		return classification;
+	});
+}
+
+/**
+ * Build the optional polymorphic `credentials` object. The `key` selects the
+ * credential type; carrier-specific values come from the JSON sub-field.
+ * Returns undefined when nothing was provided.
+ */
+function buildCarrierCredentials(
+	ctx: IExecuteFunctions,
+	itemIndex: number,
+): IDataObject | undefined {
+	const input = ctx.getNodeParameter('carrierCredentials', itemIndex, {}) as IDataObject;
+	const values = parseJsonParam(ctx, itemIndex, input.values, 'Credentials Values');
+	if (!isSet(input.key) && !values) return undefined;
+
+	const credentials: IDataObject = {};
+	if (isSet(input.key)) credentials.key = input.key;
+	if (values) Object.assign(credentials, values);
+	return credentials;
+}
+
 /**
  * Assemble a `CarrierForCreation` request body. Required by the API: key, name.
- * Common fields come from "Additional Fields"; anything deeper (credentials,
- * parcelLabelClassifications) can be supplied via "Additional Body Fields
- * (JSON)".
+ * Common fields come from "Additional Fields"; parcel label classifications and
+ * credentials have their own structured fields; anything else can be supplied
+ * via "Additional Body Fields (JSON)".
  */
 export function buildCarrierForCreation(ctx: IExecuteFunctions, itemIndex: number): IDataObject {
 	const get = (name: string, fallback?: unknown): unknown =>
@@ -34,6 +86,12 @@ export function buildCarrierForCreation(ctx: IExecuteFunctions, itemIndex: numbe
 	if (additionalFields.productValueNeeded !== undefined) {
 		body.productValueNeeded = additionalFields.productValueNeeded;
 	}
+
+	const classifications = buildCarrierClassifications(ctx, itemIndex);
+	if (classifications) body.parcelLabelClassifications = classifications;
+
+	const credentials = buildCarrierCredentials(ctx, itemIndex);
+	if (credentials) body.credentials = credentials;
 
 	const advanced = parseJsonParam(
 		ctx,

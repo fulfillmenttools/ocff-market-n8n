@@ -34,6 +34,7 @@ import {
 import {
 	buildInboundProcessForCreation,
 	buildInboundProcessForPatch,
+	buildInboundPurchaseOrderForUpsert,
 	buildInboundReceiptForCreation,
 	simplifyInboundProcess,
 } from './InboundFunctions';
@@ -555,6 +556,20 @@ export class Fulfillmenttools implements INodeType {
 
 						// PATCH returns no body; fetch the updated entity to return it.
 						await fulfillmenttoolsApiRequest.call(this, 'PATCH', path, body);
+						responseData = (await fulfillmenttoolsApiRequest.call(
+							this,
+							'GET',
+							path,
+						)) as IDataObject;
+					} else if (operation === 'updatePurchaseOrder') {
+						const inboundProcessId = this.getNodeParameter('inboundProcessId', i, '', {
+							extractValue: true,
+						}) as string;
+						const body = buildInboundPurchaseOrderForUpsert(this, i);
+						const path = `/api/inboundprocesses/${encodeURIComponent(inboundProcessId)}`;
+
+						// PUT returns no body; fetch the updated process to return it.
+						await fulfillmenttoolsApiRequest.call(this, 'PUT', `${path}/purchaseorder`, body);
 						responseData = (await fulfillmenttoolsApiRequest.call(
 							this,
 							'GET',

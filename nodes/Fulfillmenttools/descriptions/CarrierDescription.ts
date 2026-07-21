@@ -259,6 +259,117 @@ export const carrierFields: INodeProperties[] = [
 			},
 		],
 	},
+	{
+		displayName: 'Parcel Label Classifications',
+		name: 'parcelLabelClassifications',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Classification',
+		default: {},
+		displayOptions: showForCarrierCreate,
+		description: 'Parcel label size classifications offered by this carrier',
+		options: [
+			{
+				displayName: 'Classification',
+				name: 'classification',
+				// eslint-disable-next-line n8n-nodes-base/node-param-fixed-collection-type-unsorted-items
+				values: [
+					{
+						displayName: 'Name',
+						name: 'name',
+						type: 'string',
+						default: '',
+						required: true,
+						placeholder: 'e.g. S-Parcel',
+						description: 'Display name of the classification',
+					},
+					{
+						displayName: 'Locale',
+						name: 'locale',
+						type: 'string',
+						default: 'en_US',
+						placeholder: 'e.g. en_US',
+						description: 'Locale the name is given in (used as the key of the localized name)',
+					},
+					{
+						displayName: 'Height (Cm)',
+						name: 'height',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Parcel height in centimeters',
+					},
+					{
+						displayName: 'Length (Cm)',
+						name: 'length',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Parcel length in centimeters',
+					},
+					{
+						displayName: 'Width (Cm)',
+						name: 'width',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Parcel width in centimeters',
+					},
+					{
+						displayName: 'Weight (Gram)',
+						name: 'weight',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Parcel weight in grams',
+					},
+					{
+						displayName: 'Custom Weight (Gram)',
+						name: 'customWeight',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Custom parcel weight in grams',
+					},
+					{
+						displayName: 'Bulky Goods',
+						name: 'bulkyGoods',
+						type: 'boolean',
+						default: false,
+						description: 'Whether this classification is for bulky goods',
+					},
+				],
+			},
+		],
+	},
+	{
+		displayName: 'Credentials',
+		name: 'carrierCredentials',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: showForCarrierCreate,
+		description:
+			'Credentials for the carrier. The exact fields depend on the carrier (CEP) integration.',
+		options: [
+			{
+				displayName: 'Key',
+				name: 'key',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. DHL_V2',
+				description: 'Key identifying the carrier credentials type',
+			},
+			{
+				displayName: 'Values (JSON)',
+				name: 'values',
+				type: 'json',
+				default: '{}',
+				description:
+					'Carrier-specific credential fields (e.g. user, password, tokens), merged alongside the key',
+			},
+		],
+	},
 
 	// ----------------------------------
 	//   carrier: update — fields
@@ -347,6 +458,6 @@ export const carrierFields: INodeProperties[] = [
 			},
 		},
 		description:
-			'Advanced: raw JSON merged into the request body for fields not listed above (e.g. credentials, parcelLabelClassifications). See CarrierForCreation / ModifyCarrier in the API reference.',
+			'Advanced: raw JSON merged into the request body for fields not listed above (on Update e.g. credentials, parcelLabelClassifications). See CarrierForCreation / ModifyCarrier in the API reference.',
 	},
 ];

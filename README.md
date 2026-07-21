@@ -37,7 +37,10 @@ and use the package name `@fulfillmenttools/n8n-nodes-fulfillmenttools`.
   **Limit**, and **Simplify**.
 - **Update** (`PATCH /api/facilities/{id}`) — updates a facility. Requires the
   current **Version** (optimistic locking — get it first with **Get**). Exposes
-  common fields plus a raw-JSON field for advanced properties.
+  the common scalar fields plus structured **Address**, **Contact**, **Tags**,
+  **Picking Methods**, **Services**, **Picking Times**, **Scanning Rules** and
+  **Closing Days** (the same widgets as Create), plus a raw-JSON field for
+  advanced properties (configs).
 - **Delete** (`DELETE /api/facilities/{id}`) — deletes a facility. Optional
   **Force Deletion** to cascade without pre-condition checks. Returns
   `{ "deleted": true }`.
@@ -45,25 +48,31 @@ and use the package name `@fulfillmenttools/n8n-nodes-fulfillmenttools`.
 ### Order
 
 - **Create** (`POST /api/orders`) — creates an order. Required: order date and
-  one or more order line items (tenant article ID, title, quantity). Optional:
-  tenant order ID, consumer (ID, email, addresses), status, custom attributes,
-  and a raw-JSON field for advanced properties (delivery preferences, payment
-  info, source, stickers, pricing).
+  one or more order line items (tenant article ID, title, quantity, plus
+  optional scannable codes and custom attributes). Optional: tenant order ID,
+  consumer (ID, email, addresses, facility ref, tenant facility ID, custom
+  attributes), status, valid-until (promises), **Payment Info** (currency,
+  localized method), **Tags**, **Status Reasons**, custom attributes, and a
+  raw-JSON field for advanced properties (delivery preferences, source,
+  stickers, custom services, pricing).
 - **Get** (`GET /api/orders/{id}`) — retrieves a single order. Select it **From
   list** or **By ID**. Supports **Simplify**.
 - **Get Many** (`GET /api/orders`) — retrieves many orders with optional filters
   (tenant order ID, consumer ID), **Return All** / **Limit**, and **Simplify**.
 - **Update** (`PATCH /api/orders/{id}`) — updates an order. Requires the current
   **Version** (optimistic locking — get it first with **Get**). Exposes comment,
-  preferred handling time and custom attributes, plus a raw-JSON field for
-  advanced properties (consumer, order line items, pricing).
+  preferred handling time, custom attributes, a structured **Consumer**, and
+  **Order Line Items** (the sent set replaces all existing line items), plus a
+  raw-JSON field for advanced properties (pricing).
 
 ### Carrier
 
 - **Create** (`POST /api/carriers`) — creates a carrier. Required: key (the CEP
   integration, e.g. `DHL_V2`) and name. Optional: status, logo URL, product
-  value needed, default parcel dimensions, plus a raw-JSON field for advanced
-  properties (credentials, parcel label classifications).
+  value needed, default parcel dimensions, structured **Parcel Label
+  Classifications** (localized name, dimensions, bulky goods) and **Credentials**
+  (key plus carrier-specific JSON values), plus a raw-JSON field for any further
+  advanced properties.
 - **Get** (`GET /api/carriers/{id}`) — retrieves a single carrier. Select it
   **From list** or **By ID**. Supports **Simplify**.
 - **Get Many** (`GET /api/carriers`) — retrieves many carriers with **Return
@@ -80,16 +89,20 @@ operations take a **Facility** (From list or by ID); get/create/update also take
 a **Carrier**.
 
 - **Create** (`POST …/carriers/{carrierRef}`) — connects a carrier to the
-  facility. Optional: name, status, plus a raw-JSON field for advanced
-  properties (configuration, credentials, cutoff times, delivery areas, valid
-  delivery targets, parcel label classifications, tags).
+  facility. Optional: name, status, structured **Valid Delivery Targets**,
+  **Cutoff Time** (hour/minute), **Delivery Areas** (country/postal code),
+  **Tags** and **Parcel Label Classifications** (localized name, dimensions,
+  bulky goods), dedicated **Configuration** / **Credentials** JSON fields, plus a
+  raw-JSON field for the remaining advanced properties (weekday cutoff times).
 - **Get** (`GET …/carriers/{carrierRef}`) — retrieves a single connection.
   Supports **Simplify**.
 - **Get Many** (`GET …/carriers`) — retrieves all carrier connections of the
   facility. Supports **Simplify**.
 - **Update** (`PUT …/carriers/{carrierRef}`) — updates a connection. Requires
   the current **Version** (optimistic locking — get it first with **Get**).
-  Exposes name and status, plus a raw-JSON field for advanced properties.
+  Exposes name, status and the same structured fields as Create (valid delivery
+  targets, cutoff time, delivery areas, tags, parcel label classifications,
+  configuration, credentials), plus a raw-JSON field for advanced properties.
 
 ### Inbound
 
@@ -114,6 +127,11 @@ Inbound processes (`/api/inboundprocesses`).
   Requires the current **Version** (optimistic locking — get it first with
   **Get**). Exposes on hold, scannable codes and custom attributes. Returns the
   updated process.
+- **Update Purchase Order** (`PUT /api/inboundprocesses/{id}/purchaseorder`) —
+  creates or replaces the purchase order of an inbound process. Requires the
+  current **Version** (optimistic locking — get it first with **Get**) and the
+  same structured **Purchase Order** / **Purchase Order Line Items** fields as
+  Create. Returns the updated process.
 - **Delete** (`DELETE /api/inboundprocesses/{id}`) — deletes an inbound process.
   Returns `{ "deleted": true }`.
 

@@ -24,6 +24,22 @@ const showForCreateAny = {
 	},
 };
 
+// Managed-facility structured fields reused by create and update
+const showForCreateOrUpdate = {
+	show: {
+		resource: ['facility'],
+		operation: ['create', 'update'],
+	},
+};
+
+// Fields shared by both create operations and reused by update
+const showForCreateAnyOrUpdate = {
+	show: {
+		resource: ['facility'],
+		operation: ['create', 'createSupplier', 'update'],
+	},
+};
+
 /**
  * Operations available for the Facility resource.
  * Extend the `options` array (and add a matching branch in the node's
@@ -341,6 +357,114 @@ export const facilityFields: INodeProperties[] = [
 		],
 	},
 	{
+		displayName: 'Address',
+		name: 'address',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['facility'],
+				operation: ['update'],
+			},
+		},
+		description: 'Facility address fields to update. Only the fields you set are changed.',
+		options: [
+			{
+				displayName: 'Additional Address Info',
+				name: 'additionalAddressInfo',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. c/o Jane Doe',
+			},
+			{
+				displayName: 'City',
+				name: 'city',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. Langenfeld',
+			},
+			{
+				displayName: 'Company Name',
+				name: 'companyName',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. Speedy Boxales Ltd.',
+				description: 'Company name of the facility address',
+			},
+			{
+				displayName: 'Country',
+				name: 'country',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. DE',
+				description: 'Two-letter country code as per ISO 3166-1 alpha-2 (e.g. DE)',
+			},
+			{
+				displayName: 'Custom Attributes (JSON)',
+				name: 'customAttributes',
+				type: 'json',
+				default: '{}',
+				description: 'Free-form attributes stored on the address',
+			},
+			{
+				displayName: 'House Number',
+				name: 'houseNumber',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. 42a',
+			},
+			{
+				displayName: 'Latitude',
+				name: 'latitude',
+				type: 'number',
+				default: 0,
+				typeOptions: { numberPrecision: 6 },
+				description:
+					'Latitude of the facility. If set, Longitude is required too; otherwise the address is geocoded automatically.',
+			},
+			{
+				displayName: 'Longitude',
+				name: 'longitude',
+				type: 'number',
+				default: 0,
+				typeOptions: { numberPrecision: 6 },
+				description:
+					'Longitude of the facility. If set, Latitude is required too; otherwise the address is geocoded automatically.',
+			},
+			{
+				displayName: 'Postal Code',
+				name: 'postalCode',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. 40764',
+			},
+			{
+				displayName: 'Province',
+				name: 'province',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. NRW',
+			},
+			{
+				displayName: 'Street',
+				name: 'street',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. Hauptstr.',
+			},
+			{
+				displayName: 'Time Zone ID',
+				name: 'timeZoneId',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. Europe/Berlin',
+				description:
+					'IANA time zone identifier. If unset, the time zone is resolved from the address automatically.',
+			},
+		],
+	},
+	{
 		displayName: 'Additional Body Fields (JSON)',
 		name: 'additionalBodyFields',
 		type: 'json',
@@ -352,7 +476,7 @@ export const facilityFields: INodeProperties[] = [
 			},
 		},
 		description:
-			'Advanced: raw JSON merged into the modification body for fields not listed above (e.g. address, contact, pickingTimes, tags). See ManagedFacilityForModification in the API reference.',
+			'Advanced: raw JSON merged into the modification body for fields not listed above (e.g. configs). See ManagedFacilityForModification in the API reference.',
 	},
 
 	// ----------------------------------
@@ -520,7 +644,7 @@ export const facilityFields: INodeProperties[] = [
 		name: 'pickingMethods',
 		type: 'multiOptions',
 		default: [],
-		displayOptions: showForCreate,
+		displayOptions: showForCreateOrUpdate,
 		description: 'Picking methods supported by this facility',
 		options: [
 			{ name: 'Batch', value: 'BATCH' },
@@ -533,7 +657,7 @@ export const facilityFields: INodeProperties[] = [
 		name: 'services',
 		type: 'multiOptions',
 		default: [],
-		displayOptions: showForCreate,
+		displayOptions: showForCreateOrUpdate,
 		description: 'Services this facility offers',
 		options: [
 			{ name: 'Pickup', value: 'PICKUP' },
@@ -609,7 +733,7 @@ export const facilityFields: INodeProperties[] = [
 		typeOptions: { multipleValues: true },
 		placeholder: 'Add Phone Number',
 		default: {},
-		displayOptions: showForCreateAny,
+		displayOptions: showForCreateAnyOrUpdate,
 		options: [
 			{
 				name: 'number',
@@ -652,7 +776,7 @@ export const facilityFields: INodeProperties[] = [
 		typeOptions: { multipleValues: true },
 		placeholder: 'Add Email Address',
 		default: {},
-		displayOptions: showForCreateAny,
+		displayOptions: showForCreateAnyOrUpdate,
 		options: [
 			{
 				name: 'email',
@@ -687,7 +811,7 @@ export const facilityFields: INodeProperties[] = [
 		type: 'collection',
 		placeholder: 'Add Contact Field',
 		default: {},
-		displayOptions: showForCreate,
+		displayOptions: showForCreateOrUpdate,
 		description: 'Contact person for the facility. First and last name are both required if set.',
 		options: [
 			{
@@ -729,7 +853,7 @@ export const facilityFields: INodeProperties[] = [
 		typeOptions: { multipleValues: true },
 		placeholder: 'Add Picking Time',
 		default: {},
-		displayOptions: showForCreate,
+		displayOptions: showForCreateOrUpdate,
 		description: 'Time ranges per weekday during which picking happens. Ranges must not overlap.',
 		options: [
 			{
@@ -804,7 +928,7 @@ export const facilityFields: INodeProperties[] = [
 		typeOptions: { multipleValues: true },
 		placeholder: 'Add Scanning Rule',
 		default: {},
-		displayOptions: showForCreate,
+		displayOptions: showForCreateOrUpdate,
 		description: 'How items should be scanned during picking. Lowest priority is most preferable.',
 		options: [
 			{
@@ -842,7 +966,7 @@ export const facilityFields: INodeProperties[] = [
 		typeOptions: { multipleValues: true },
 		placeholder: 'Add Closing Day',
 		default: {},
-		displayOptions: showForCreate,
+		displayOptions: showForCreateOrUpdate,
 		description: 'Days on which the facility is closed and does not pick',
 		options: [
 			{
@@ -890,7 +1014,7 @@ export const facilityFields: INodeProperties[] = [
 		typeOptions: { multipleValues: true },
 		placeholder: 'Add Tag',
 		default: {},
-		displayOptions: showForCreateAny,
+		displayOptions: showForCreateAnyOrUpdate,
 		options: [
 			{
 				name: 'tag',

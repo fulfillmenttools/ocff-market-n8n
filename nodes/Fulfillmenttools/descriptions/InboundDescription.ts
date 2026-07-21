@@ -17,6 +17,14 @@ const showForInboundReceipt = {
 	},
 };
 
+// Purchase-order fields are shared by Create (optional) and Update Purchase Order.
+const showForInboundPurchaseOrder = {
+	show: {
+		resource: RESOURCE,
+		operation: ['create', 'updatePurchaseOrder'],
+	},
+};
+
 /**
  * Operations available for the Inbound (inbound process) resource.
  */
@@ -64,6 +72,12 @@ export const inboundOperations: INodeProperties[] = [
 				description: 'Update an existing inbound process',
 				action: 'Update an inbound process',
 			},
+			{
+				name: 'Update Purchase Order',
+				value: 'updatePurchaseOrder',
+				description: 'Create or replace the purchase order of an inbound process',
+				action: 'Update purchase order of an inbound process',
+			},
 		],
 		default: 'create',
 	},
@@ -85,7 +99,7 @@ export const inboundFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: RESOURCE,
-				operation: ['get', 'update', 'delete', 'addReceipt'],
+				operation: ['get', 'update', 'delete', 'addReceipt', 'updatePurchaseOrder'],
 			},
 		},
 		description: 'The inbound process to operate on',
@@ -233,7 +247,7 @@ export const inboundFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: RESOURCE,
-				operation: ['update'],
+				operation: ['update', 'updatePurchaseOrder'],
 			},
 		},
 		description:
@@ -320,7 +334,7 @@ export const inboundFields: INodeProperties[] = [
 		type: 'collection',
 		placeholder: 'Add Field',
 		default: {},
-		displayOptions: showForInboundCreate,
+		displayOptions: showForInboundPurchaseOrder,
 		description:
 			'Purchase order for this inbound process. Requires an order date, requested date and at least one line item if set.',
 		options: [
@@ -383,7 +397,7 @@ export const inboundFields: INodeProperties[] = [
 		typeOptions: { multipleValues: true },
 		placeholder: 'Add Line Item',
 		default: {},
-		displayOptions: showForInboundCreate,
+		displayOptions: showForInboundPurchaseOrder,
 		description: 'Line items expected to be delivered',
 		options: [
 			{
@@ -631,10 +645,10 @@ export const inboundFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: RESOURCE,
-				operation: ['create', 'update', 'addReceipt'],
+				operation: ['create', 'update', 'addReceipt', 'updatePurchaseOrder'],
 			},
 		},
 		description:
-			'Advanced: raw JSON merged into the request body for fields not listed above (on Create e.g. additional receipts; on Add Receipt e.g. stock properties). See the InboundProcess schemas in the API reference.',
+			'Advanced: raw JSON merged into the request body for fields not listed above. See the InboundProcess schemas in the API reference.',
 	},
 ];

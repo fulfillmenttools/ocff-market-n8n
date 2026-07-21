@@ -13,6 +13,20 @@ const showForOrderCreate = {
 	},
 };
 
+const showForOrderUpdate = {
+	show: {
+		resource: ['order'],
+		operation: ['update'],
+	},
+};
+
+const showForOrderCreateOrUpdate = {
+	show: {
+		resource: ['order'],
+		operation: ['create', 'update'],
+	},
+};
+
 /**
  * Operations available for the Order resource.
  */
@@ -216,6 +230,7 @@ export const orderFields: INodeProperties[] = [
 			{
 				name: 'item',
 				displayName: 'Line Item',
+				// eslint-disable-next-line n8n-nodes-base/node-param-fixed-collection-type-unsorted-items
 				values: [
 					{
 						displayName: 'Tenant Article ID',
@@ -252,6 +267,21 @@ export const orderFields: INodeProperties[] = [
 						placeholder: 'e.g. https://example.com/image.png',
 						description: 'A publicly accessible link to a picture of the article',
 					},
+					{
+						displayName: 'Custom Attributes (JSON)',
+						name: 'customAttributes',
+						type: 'json',
+						default: '{}',
+						description: 'Free-form attributes stored on this line item',
+					},
+					{
+						displayName: 'Scannable Codes',
+						name: 'scannableCodes',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. 4006381333931, 5901234123457',
+						description: 'Comma-separated list of codes that identify the article',
+					},
 				],
 			},
 		],
@@ -262,7 +292,7 @@ export const orderFields: INodeProperties[] = [
 		type: 'collection',
 		placeholder: 'Add Consumer Field',
 		default: {},
-		displayOptions: showForOrderCreate,
+		displayOptions: showForOrderCreateOrUpdate,
 		description: 'The consumer this order is for',
 		options: [
 			{
@@ -281,11 +311,134 @@ export const orderFields: INodeProperties[] = [
 				placeholder: 'e.g. e4213a07-f563-46a3-b1ba-4dfeb6abe82a',
 			},
 			{
+				displayName: 'Custom Attributes (JSON)',
+				name: 'customAttributes',
+				type: 'json',
+				default: '{}',
+				description: 'Free-form attributes stored on the consumer',
+			},
+			{
 				displayName: 'Email',
 				name: 'email',
 				type: 'string',
 				placeholder: 'e.g. nathan@example.com',
 				default: '',
+			},
+			{
+				displayName: 'Facility Ref',
+				name: 'facilityRef',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. e4213a07-f563-46a3-b1ba-4dfeb6abe82a',
+				description: 'ID of the facility, if the recipient is a facility',
+			},
+			{
+				displayName: 'Tenant Facility ID',
+				name: 'tenantFacilityId',
+				type: 'string',
+				default: '',
+				description: 'The facility ID in your own system, if the recipient is a facility',
+			},
+		],
+	},
+	{
+		displayName: 'Tags',
+		name: 'tags',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Tag',
+		default: {},
+		displayOptions: showForOrderCreate,
+		description: 'Tags to attach to the order',
+		options: [
+			{
+				name: 'tag',
+				displayName: 'Tag',
+				values: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. priority',
+					},
+					{
+						displayName: 'Value',
+						name: 'value',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. high',
+					},
+				],
+			},
+		],
+	},
+	{
+		displayName: 'Status Reasons',
+		name: 'statusReasons',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Status Reason',
+		default: {},
+		displayOptions: showForOrderCreate,
+		description: 'Reasons explaining why the order has its status',
+		options: [
+			{
+				name: 'reason',
+				displayName: 'Status Reason',
+				values: [
+					{
+						displayName: 'Reason',
+						name: 'reason',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. Out of stock',
+						description: 'The reason for setting this order status',
+					},
+					{
+						displayName: 'Status',
+						name: 'status',
+						type: 'options',
+						required: true,
+						default: 'OPEN',
+						options: [
+							{ name: 'Cancelled', value: 'CANCELLED' },
+							{ name: 'Locked', value: 'LOCKED' },
+							{ name: 'Obsolete', value: 'OBSOLETE' },
+							{ name: 'Open', value: 'OPEN' },
+							{ name: 'Promised', value: 'PROMISED' },
+						],
+					},
+				],
+			},
+		],
+	},
+	{
+		displayName: 'Payment Info',
+		name: 'paymentInfo',
+		type: 'collection',
+		placeholder: 'Add Payment Field',
+		default: {},
+		displayOptions: showForOrderCreate,
+		description: 'Payment details for the order',
+		options: [
+			{
+				displayName: 'Currency',
+				name: 'currency',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. EUR',
+				description: 'The currency the consumer paid with',
+			},
+			{
+				displayName: 'Method Localized (JSON)',
+				name: 'methodLocalized',
+				type: 'json',
+				default: '{}',
+				description: 'A locale-to-string map of the payment method, e.g. { "en_US": "Credit Card" }',
 			},
 		],
 	},
@@ -317,12 +470,79 @@ export const orderFields: INodeProperties[] = [
 					{ name: 'Promised', value: 'PROMISED' },
 				],
 			},
+			{
+				displayName: 'Tenant Order ID',
+				name: 'tenantOrderId',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. R456728546',
+				description: "A reference to this order's ID in your own system",
+			},
+			{
+				displayName: 'Valid Until',
+				name: 'validUntil',
+				type: 'dateTime',
+				default: '',
+				description:
+					'For promised orders: the date and time at which the order expires and is automatically cancelled if not converted. Must be between 1 minute and 8 hours from now.',
+			},
 		],
 	},
 
 	// ----------------------------------
 	//   order: update — fields
 	// ----------------------------------
+	{
+		displayName: 'Order Line Items',
+		name: 'updateOrderLineItems',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Line Item',
+		default: {},
+		displayOptions: showForOrderUpdate,
+		description:
+			'Replaces the order line items of the order. All order lines must be included here, only the included lines will remain after the update.',
+		options: [
+			{
+				name: 'item',
+				displayName: 'Line Item',
+				values: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. LGMl2DuvPnfPoSHhYFOm',
+						description: 'The ID of an existing order line item',
+					},
+					{
+						displayName: 'Quantity',
+						name: 'quantity',
+						type: 'number',
+						default: 1,
+						typeOptions: { minValue: 0 },
+						description: 'The quantity of this order line item',
+					},
+					{
+						displayName: 'Tenant Article ID',
+						name: 'tenantArticleId',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. 4711',
+						description: 'Reference to the article number in your own system',
+					},
+					{
+						displayName: 'Title',
+						name: 'title',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. Cologne Water',
+						description: 'The title of the product',
+					},
+				],
+			},
+		],
+	},
 	{
 		displayName: 'Update Fields',
 		name: 'updateFields',
@@ -376,6 +596,6 @@ export const orderFields: INodeProperties[] = [
 			},
 		},
 		description:
-			'Advanced: raw JSON merged into the request body for fields not listed above (e.g. deliveryPreferences, paymentInfo, source, stickers, pricing). See OrderForCreation / OrderForUpdate in the API reference.',
+			'Advanced: raw JSON merged into the request body for fields not listed above (e.g. deliveryPreferences, customServices, source, stickers, pricing). See OrderForCreation / OrderForUpdate in the API reference.',
 	},
 ];

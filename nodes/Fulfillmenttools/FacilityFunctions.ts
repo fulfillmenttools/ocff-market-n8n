@@ -46,39 +46,62 @@ export function isSet(value: unknown): boolean {
 	return value !== undefined && value !== null && value !== '';
 }
 
+/** Accessor over a single item's node parameters. */
+type ParamGetter = (name: string, fallback?: unknown) => unknown;
+
+/** Raw address field values, sourced differently per operation. */
+interface AddressFieldValues {
+	companyName?: unknown;
+	street?: unknown;
+	city?: unknown;
+	postalCode?: unknown;
+	country?: unknown;
+	houseNumber?: unknown;
+	additionalAddressInfo?: unknown;
+	province?: unknown;
+	customAttributes?: unknown;
+	timeZoneId?: unknown;
+	latitude?: unknown;
+	longitude?: unknown;
+}
+
 /**
- * Assemble a `ManagedFacilityForCreation` request body from the node parameters
- * for a single input item. Mirrors the full fulfillmenttools facility schema.
+ * Assemble a `FacilityAddressForCreation` object shared by the managed-facility
+ * create and modification operations. Scalar keys in `alwaysKeys` are set
+ * unconditionally (they are required on create); all others are only set when
+ * the user provided a value. Phone numbers and email addresses are read via the
+ * shared `phoneNumbers` / `emailAddresses` parameters.
  */
-export function buildManagedFacilityForCreation(
+function buildAddress(
 	ctx: IExecuteFunctions,
 	itemIndex: number,
+	get: ParamGetter,
+	fields: AddressFieldValues,
+	alwaysKeys: readonly (keyof AddressFieldValues)[] = [],
 ): IDataObject {
-	const get = (name: string, fallback?: unknown): unknown =>
-		ctx.getNodeParameter(name, itemIndex, fallback);
+	const address: IDataObject = {};
 
-	// ----- address -----
-	const address: IDataObject = {
-		companyName: get('companyName') as string,
-		street: get('street') as string,
-		city: get('city') as string,
-		postalCode: get('postalCode') as string,
-		country: get('country') as string,
-	};
-
-	const houseNumber = get('houseNumber', '') as string;
-	if (isSet(houseNumber)) address.houseNumber = houseNumber;
-
-	const addr = get('addressAdditionalFields', {}) as IDataObject;
-	for (const key of ['additionalAddressInfo', 'province'] as const) {
-		if (isSet(addr[key])) address[key] = addr[key];
+	const scalarKeys: (keyof AddressFieldValues)[] = [
+		'companyName',
+		'street',
+		'city',
+		'postalCode',
+		'country',
+		'houseNumber',
+		'additionalAddressInfo',
+		'province',
+	];
+	for (const key of scalarKeys) {
+		const value = fields[key];
+		if (alwaysKeys.includes(key) || isSet(value)) address[key] = value as string;
 	}
-	const addrCustom = parseJsonParam(ctx, itemIndex, addr.customAttributes, 'Address Custom Attributes');
-	if (addrCustom) address.customAttributes = addrCustom;
-	if (isSet(addr.timeZoneId)) address.resolvedTimeZone = { timeZoneId: addr.timeZoneId };
 
-	const hasLat = isSet(addr.latitude);
-	const hasLon = isSet(addr.longitude);
+	const addrCustom = parseJsonParam(ctx, itemIndex, fields.customAttributes, 'Address Custom Attributes');
+	if (addrCustom) address.customAttributes = addrCustom;
+	if (isSet(fields.timeZoneId)) address.resolvedTimeZone = { timeZoneId: fields.timeZoneId };
+
+	const hasLat = isSet(fields.latitude);
+	const hasLon = isSet(fields.longitude);
 	if (hasLat !== hasLon) {
 		throw new NodeOperationError(
 			ctx.getNode(),
@@ -87,7 +110,7 @@ export function buildManagedFacilityForCreation(
 		);
 	}
 	if (hasLat && hasLon) {
-		address.resolvedCoordinates = { lat: Number(addr.latitude), lon: Number(addr.longitude) };
+		address.resolvedCoordinates = { lat: Number(fields.latitude), lon: Number(fields.longitude) };
 	}
 
 	const phones = ((get('phoneNumbers', {}) as IDataObject).number as IDataObject[]) ?? [];
@@ -107,6 +130,129 @@ export function buildManagedFacilityForCreation(
 			return entry;
 		});
 	}
+
+	return address;
+}
+
+/**
+ * Build a `FacilityContact` object from a Contact collection. Returns undefined
+ * when neither name is set; throws when only one of the two names is provided.
+ */
+function buildContact(
+	ctx: IExecuteFunctions,
+	itemIndex: number,
+	contact: IDataObject,
+): IDataObject | undefined {
+	if (!isSet(contact.firstName) && !isSet(contact.lastName)) return undefined;
+	if (!isSet(contact.firstName) || !isSet(contact.lastName)) {
+		throw new NodeOperationError(ctx.getNode(), 'Contact requires both First Name and Last Name', {
+			itemIndex,
+		});
+	}
+	const c: IDataObject = { firstName: contact.firstName, lastName: contact.lastName };
+	if (isSet(contact.roleDescription)) c.roleDescription = contact.roleDescription;
+	const contactCustom = parseJsonParam(
+		ctx,
+		itemIndex,
+		contact.customAttributes,
+		'Contact Custom Attributes',
+	);
+	if (contactCustom) c.customAttributes = contactCustom;
+	return c;
+}
+
+/** Build the `tags` array from the Tags fixedCollection, or undefined if empty. */
+function buildTags(get: ParamGetter): IDataObject[] | undefined {
+	const tags = ((get('tags', {}) as IDataObject).tag as IDataObject[]) ?? [];
+	if (!tags.length) return undefined;
+	return tags.map((t) => ({ id: t.id, value: t.value }));
+}
+
+/** Build the `services` array from the Services multiOptions, or undefined if empty. */
+function buildServices(get: ParamGetter): IDataObject[] | undefined {
+	const services = (get('services', []) as string[]) ?? [];
+	if (!services.length) return undefined;
+	return services.map((type) => ({ type }));
+}
+
+/** Build the `pickingMethods` array from the multiOptions, or undefined if empty. */
+function buildPickingMethods(get: ParamGetter): string[] | undefined {
+	const pickingMethods = (get('pickingMethods', []) as string[]) ?? [];
+	if (!pickingMethods.length) return undefined;
+	return pickingMethods;
+}
+
+/** Build the `closingDays` array from the fixedCollection, or undefined if empty. */
+function buildClosingDays(get: ParamGetter): IDataObject[] | undefined {
+	const closingDays = ((get('closingDays', {}) as IDataObject).day as IDataObject[]) ?? [];
+	if (!closingDays.length) return undefined;
+	return closingDays.map((d) => ({ date: d.date, reason: d.reason, recurrence: d.recurrence }));
+}
+
+/** Build the `scanningRule` object from the Scanning Rules fixedCollection, or undefined if empty. */
+function buildScanningRule(get: ParamGetter): IDataObject | undefined {
+	const scanningRules = ((get('scanningRules', {}) as IDataObject).rule as IDataObject[]) ?? [];
+	if (!scanningRules.length) return undefined;
+	return {
+		values: scanningRules.map((r) => ({
+			scanningRuleType: r.scanningRuleType,
+			priority: Number(r.priority),
+		})),
+	};
+}
+
+/** Build the `pickingTimes` object (grouped per weekday) from the fixedCollection, or undefined if empty. */
+function buildPickingTimes(get: ParamGetter): IDataObject | undefined {
+	const ranges = ((get('pickingTimes', {}) as IDataObject).range as IDataObject[]) ?? [];
+	if (!ranges.length) return undefined;
+	const pickingTimes: IDataObject = {};
+	for (const r of ranges) {
+		const weekday = r.weekday as string;
+		const range: IDataObject = {
+			start: { hour: Number(r.startHour), minute: Number(r.startMinute) },
+			end: { hour: Number(r.endHour), minute: Number(r.endMinute) },
+		};
+		if (isSet(r.capacity) && Number(r.capacity) > 0) range.capacity = Number(r.capacity);
+		const existing = (pickingTimes[weekday] as IDataObject[]) ?? [];
+		existing.push(range);
+		pickingTimes[weekday] = existing;
+	}
+	return pickingTimes;
+}
+
+/**
+ * Assemble a `ManagedFacilityForCreation` request body from the node parameters
+ * for a single input item. Mirrors the full fulfillmenttools facility schema.
+ */
+export function buildManagedFacilityForCreation(
+	ctx: IExecuteFunctions,
+	itemIndex: number,
+): IDataObject {
+	const get = (name: string, fallback?: unknown): unknown =>
+		ctx.getNodeParameter(name, itemIndex, fallback);
+
+	// ----- address -----
+	const addr = get('addressAdditionalFields', {}) as IDataObject;
+	const address = buildAddress(
+		ctx,
+		itemIndex,
+		get,
+		{
+			companyName: get('companyName'),
+			street: get('street'),
+			city: get('city'),
+			postalCode: get('postalCode'),
+			country: get('country'),
+			houseNumber: get('houseNumber', ''),
+			additionalAddressInfo: addr.additionalAddressInfo,
+			province: addr.province,
+			customAttributes: addr.customAttributes,
+			timeZoneId: addr.timeZoneId,
+			latitude: addr.latitude,
+			longitude: addr.longitude,
+		},
+		['companyName', 'street', 'city', 'postalCode', 'country'],
+	);
 
 	// ----- base body -----
 	const body: IDataObject = {
@@ -128,37 +274,19 @@ export function buildManagedFacilityForCreation(
 	if (facilityCustom) body.customAttributes = facilityCustom;
 
 	// ----- contact -----
-	const contact = get('contact', {}) as IDataObject;
-	if (isSet(contact.firstName) || isSet(contact.lastName)) {
-		if (!isSet(contact.firstName) || !isSet(contact.lastName)) {
-			throw new NodeOperationError(
-				ctx.getNode(),
-				'Contact requires both First Name and Last Name',
-				{ itemIndex },
-			);
-		}
-		const c: IDataObject = { firstName: contact.firstName, lastName: contact.lastName };
-		if (isSet(contact.roleDescription)) c.roleDescription = contact.roleDescription;
-		const contactCustom = parseJsonParam(
-			ctx,
-			itemIndex,
-			contact.customAttributes,
-			'Contact Custom Attributes',
-		);
-		if (contactCustom) c.customAttributes = contactCustom;
-		body.contact = c;
-	}
+	const contact = buildContact(ctx, itemIndex, get('contact', {}) as IDataObject);
+	if (contact) body.contact = contact;
 
 	// ----- tags -----
-	const tags = ((get('tags', {}) as IDataObject).tag as IDataObject[]) ?? [];
-	if (tags.length) body.tags = tags.map((t) => ({ id: t.id, value: t.value }));
+	const tags = buildTags(get);
+	if (tags) body.tags = tags;
 
 	// ----- services & picking methods -----
-	const services = (get('services', []) as string[]) ?? [];
-	if (services.length) body.services = services.map((type) => ({ type }));
+	const services = buildServices(get);
+	if (services) body.services = services;
 
-	const pickingMethods = (get('pickingMethods', []) as string[]) ?? [];
-	if (pickingMethods.length) body.pickingMethods = pickingMethods;
+	const pickingMethods = buildPickingMethods(get);
+	if (pickingMethods) body.pickingMethods = pickingMethods;
 
 	// ----- operative cost (maxItems 1) -----
 	const cost = get('operativeCost', {}) as IDataObject;
@@ -172,43 +300,16 @@ export function buildManagedFacilityForCreation(
 	}
 
 	// ----- closing days -----
-	const closingDays = ((get('closingDays', {}) as IDataObject).day as IDataObject[]) ?? [];
-	if (closingDays.length) {
-		body.closingDays = closingDays.map((d) => ({
-			date: d.date,
-			reason: d.reason,
-			recurrence: d.recurrence,
-		}));
-	}
+	const closingDays = buildClosingDays(get);
+	if (closingDays) body.closingDays = closingDays;
 
 	// ----- scanning rule -----
-	const scanningRules = ((get('scanningRules', {}) as IDataObject).rule as IDataObject[]) ?? [];
-	if (scanningRules.length) {
-		body.scanningRule = {
-			values: scanningRules.map((r) => ({
-				scanningRuleType: r.scanningRuleType,
-				priority: Number(r.priority),
-			})),
-		};
-	}
+	const scanningRule = buildScanningRule(get);
+	if (scanningRule) body.scanningRule = scanningRule;
 
 	// ----- picking times (grouped per weekday) -----
-	const ranges = ((get('pickingTimes', {}) as IDataObject).range as IDataObject[]) ?? [];
-	if (ranges.length) {
-		const pickingTimes: IDataObject = {};
-		for (const r of ranges) {
-			const weekday = r.weekday as string;
-			const range: IDataObject = {
-				start: { hour: Number(r.startHour), minute: Number(r.startMinute) },
-				end: { hour: Number(r.endHour), minute: Number(r.endMinute) },
-			};
-			if (isSet(r.capacity) && Number(r.capacity) > 0) range.capacity = Number(r.capacity);
-			const existing = (pickingTimes[weekday] as IDataObject[]) ?? [];
-			existing.push(range);
-			pickingTimes[weekday] = existing;
-		}
-		body.pickingTimes = pickingTimes;
-	}
+	const pickingTimes = buildPickingTimes(get);
+	if (pickingTimes) body.pickingTimes = pickingTimes;
 
 	return body;
 }
@@ -312,10 +413,15 @@ export function buildManagedFacilityForModification(
 	ctx: IExecuteFunctions,
 	itemIndex: number,
 ): IDataObject {
-	const updateFields = ctx.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
+	const get = (name: string, fallback?: unknown): unknown =>
+		ctx.getNodeParameter(name, itemIndex, fallback);
 
+	const updateFields = get('updateFields', {}) as IDataObject;
+
+	// `type` and `version` are both required by ManagedFacilityForModification.
 	const body: IDataObject = {
-		version: ctx.getNodeParameter('version', itemIndex) as number,
+		type: 'MANAGED_FACILITY',
+		version: get('version') as number,
 	};
 
 	for (const key of [
@@ -333,10 +439,50 @@ export function buildManagedFacilityForModification(
 	const custom = parseJsonParam(ctx, itemIndex, updateFields.customAttributes, 'Custom Attributes');
 	if (custom) body.customAttributes = custom;
 
+	// ----- structured fields (merged before the JSON hatch below) -----
+	const ua = get('address', {}) as IDataObject;
+	const address = buildAddress(ctx, itemIndex, get, {
+		companyName: ua.companyName,
+		street: ua.street,
+		city: ua.city,
+		postalCode: ua.postalCode,
+		country: ua.country,
+		houseNumber: ua.houseNumber,
+		additionalAddressInfo: ua.additionalAddressInfo,
+		province: ua.province,
+		customAttributes: ua.customAttributes,
+		timeZoneId: ua.timeZoneId,
+		latitude: ua.latitude,
+		longitude: ua.longitude,
+	});
+	if (Object.keys(address).length) body.address = address;
+
+	const contact = buildContact(ctx, itemIndex, get('contact', {}) as IDataObject);
+	if (contact) body.contact = contact;
+
+	const tags = buildTags(get);
+	if (tags) body.tags = tags;
+
+	const services = buildServices(get);
+	if (services) body.services = services;
+
+	const pickingMethods = buildPickingMethods(get);
+	if (pickingMethods) body.pickingMethods = pickingMethods;
+
+	const closingDays = buildClosingDays(get);
+	if (closingDays) body.closingDays = closingDays;
+
+	const scanningRule = buildScanningRule(get);
+	if (scanningRule) body.scanningRule = scanningRule;
+
+	const pickingTimes = buildPickingTimes(get);
+	if (pickingTimes) body.pickingTimes = pickingTimes;
+
+	// ----- JSON hatch (e.g. configs), merged last -----
 	const advanced = parseJsonParam(
 		ctx,
 		itemIndex,
-		ctx.getNodeParameter('additionalBodyFields', itemIndex, '{}'),
+		get('additionalBodyFields', '{}'),
 		'Additional Body Fields',
 	);
 	if (advanced) Object.assign(body, advanced);

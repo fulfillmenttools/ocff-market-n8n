@@ -225,6 +225,265 @@ export const facilityCarrierConnectionFields: INodeProperties[] = [
 	},
 
 	// ----------------------------------
+	//   create / update — structured body fields
+	// ----------------------------------
+	{
+		displayName: 'Valid Delivery Targets',
+		name: 'validDeliveryTargets',
+		type: 'multiOptions',
+		default: [],
+		displayOptions: {
+			show: {
+				resource: RESOURCE,
+				operation: ['create', 'update'],
+			},
+		},
+		description: 'Valid delivery targets for this connection',
+		options: [
+			{ name: 'Ship to Customer', value: 'SHIP_TO_CUSTOMER' },
+			{ name: 'Ship to Store', value: 'SHIP_TO_STORE' },
+		],
+	},
+	{
+		displayName: 'Cutoff Time',
+		name: 'cutoffTime',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: false },
+		placeholder: 'Add Cutoff Time',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: RESOURCE,
+				operation: ['create', 'update'],
+			},
+		},
+		description: 'Cutoff time configuration for this connection',
+		options: [
+			{
+				name: 'value',
+				displayName: 'Cutoff Time',
+				values: [
+					{
+						displayName: 'Hour',
+						name: 'hour',
+						type: 'number',
+						required: true,
+						default: 12,
+						typeOptions: { minValue: 0, maxValue: 23 },
+						description: 'Hour of the cutoff time (0-23)',
+					},
+					{
+						displayName: 'Minute',
+						name: 'minute',
+						type: 'number',
+						required: true,
+						default: 0,
+						typeOptions: { minValue: 0, maxValue: 59 },
+						description: 'Minute of the cutoff time (0-59)',
+					},
+				],
+			},
+		],
+	},
+	{
+		displayName: 'Delivery Areas',
+		name: 'deliveryAreas',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Delivery Area',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: RESOURCE,
+				operation: ['create', 'update'],
+			},
+		},
+		description: 'Delivery areas supported by this connection',
+		options: [
+			{
+				name: 'area',
+				displayName: 'Delivery Area',
+				values: [
+					{
+						displayName: 'Country',
+						name: 'country',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. DE',
+						description: 'A two-digit country code as per ISO 3166-1 alpha-2',
+					},
+					{
+						displayName: 'Postal Code',
+						name: 'postalCode',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. 40764',
+						description: 'Postal code within the country',
+					},
+				],
+			},
+		],
+	},
+	{
+		displayName: 'Tags',
+		name: 'tags',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Tag',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: RESOURCE,
+				operation: ['create', 'update'],
+			},
+		},
+		description: 'Tags associated with the connection',
+		options: [
+			{
+				name: 'tag',
+				displayName: 'Tag',
+				values: [
+					{
+						displayName: 'ID',
+						name: 'id',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. color',
+						description: 'Identifier of the tag',
+					},
+					{
+						displayName: 'Value',
+						name: 'value',
+						type: 'string',
+						required: true,
+						default: '',
+						placeholder: 'e.g. red',
+						description: 'Value of the tag',
+					},
+				],
+			},
+		],
+	},
+
+	{
+		displayName: 'Parcel Label Classifications',
+		name: 'parcelLabelClassifications',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		placeholder: 'Add Classification',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: RESOURCE,
+				operation: ['create', 'update'],
+			},
+		},
+		description: 'Parcel label size classifications offered by this connection',
+		options: [
+			{
+				displayName: 'Classification',
+				name: 'classification',
+				// eslint-disable-next-line n8n-nodes-base/node-param-fixed-collection-type-unsorted-items
+				values: [
+					{
+						displayName: 'Name',
+						name: 'name',
+						type: 'string',
+						default: '',
+						required: true,
+						placeholder: 'e.g. S-Parcel',
+						description: 'Display name of the classification',
+					},
+					{
+						displayName: 'Locale',
+						name: 'locale',
+						type: 'string',
+						default: 'en_US',
+						placeholder: 'e.g. en_US',
+						description: 'Locale the name is given in (used as the key of the localized name)',
+					},
+					{
+						displayName: 'Height (Cm)',
+						name: 'height',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Parcel height in centimeters',
+					},
+					{
+						displayName: 'Length (Cm)',
+						name: 'length',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Parcel length in centimeters',
+					},
+					{
+						displayName: 'Width (Cm)',
+						name: 'width',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Parcel width in centimeters',
+					},
+					{
+						displayName: 'Weight (Gram)',
+						name: 'weight',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Parcel weight in grams',
+					},
+					{
+						displayName: 'Custom Weight (Gram)',
+						name: 'customWeight',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Custom parcel weight in grams',
+					},
+					{
+						displayName: 'Bulky Goods',
+						name: 'bulkyGoods',
+						type: 'boolean',
+						default: false,
+						description: 'Whether this classification is for bulky goods',
+					},
+				],
+			},
+		],
+	},
+	{
+		displayName: 'Configuration (JSON)',
+		name: 'configuration',
+		type: 'json',
+		default: '{}',
+		displayOptions: {
+			show: {
+				resource: RESOURCE,
+				operation: ['create', 'update'],
+			},
+		},
+		description: 'Carrier-specific configuration object. The fields depend on the carrier.',
+	},
+	{
+		displayName: 'Credentials (JSON)',
+		name: 'credentials',
+		type: 'json',
+		default: '{}',
+		displayOptions: {
+			show: {
+				resource: RESOURCE,
+				operation: ['create', 'update'],
+			},
+		},
+		description: 'Carrier-specific credentials object. The fields depend on the carrier.',
+	},
+
+	// ----------------------------------
 	//   create / update — escape hatch
 	// ----------------------------------
 	{
@@ -239,6 +498,6 @@ export const facilityCarrierConnectionFields: INodeProperties[] = [
 			},
 		},
 		description:
-			'Advanced: raw JSON merged into the request body for fields not listed above (e.g. configuration, credentials, cutoffTimes, deliveryAreas, validDeliveryTargets, parcelLabelClassifications, tags). See FacilityCarrierConnectionForCreation in the API reference.',
+			'Advanced: raw JSON merged into the request body for fields not listed above (e.g. cutoffTimes, the weekday-based cutoff configuration). See FacilityCarrierConnectionForCreation in the API reference.',
 	},
 ];

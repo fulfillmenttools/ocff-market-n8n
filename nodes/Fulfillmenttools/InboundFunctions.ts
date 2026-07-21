@@ -174,6 +174,36 @@ export function buildInboundReceiptForCreation(
 }
 
 /**
+ * Body for the Update Purchase Order operation
+ * (`InboundProcessPurchaseOrderForUpsert`). Reuses buildPurchaseOrder, adds the
+ * required `version` (optimistic locking) and merges its own
+ * "Additional Body Fields (JSON)".
+ */
+export function buildInboundPurchaseOrderForUpsert(
+	ctx: IExecuteFunctions,
+	itemIndex: number,
+): IDataObject {
+	const purchaseOrder = buildPurchaseOrder(ctx, itemIndex);
+	if (!purchaseOrder) {
+		throw new NodeOperationError(
+			ctx.getNode(),
+			'A purchase order requires an Order Date and at least one Purchase Order Line Item',
+			{ itemIndex },
+		);
+	}
+	purchaseOrder.version = ctx.getNodeParameter('version', itemIndex) as number;
+
+	const advanced = parseJsonParam(
+		ctx,
+		itemIndex,
+		ctx.getNodeParameter('additionalBodyFields', itemIndex, '{}'),
+		'Additional Body Fields',
+	);
+	if (advanced) Object.assign(purchaseOrder, advanced);
+	return purchaseOrder;
+}
+
+/**
  * Assemble an `InboundProcessForCreation` request body. Required by the API:
  * facilityRef. Common fields are exposed directly; the deeper objects
  * (purchaseOrder, receipts) can be supplied via "Additional Body Fields (JSON)".
