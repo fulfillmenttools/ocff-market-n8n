@@ -60,6 +60,13 @@ on:
       # Matches 0.1.0, 1.2.3, 2.0.0-rc.1, etc.
       # See "TAG CONVENTION" above if you prefer tags with a "v" prefix.
       - '*.*.*'
+  # Manual trigger to (re)create a GitHub Release for an existing tag without
+  # re-publishing to npm. Used to backfill Releases for already-published tags.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)create the GitHub Release for'
+        required: true
 
 jobs:
   publish:
@@ -69,11 +76,16 @@ jobs:
     permissions:
       # Required to mint an OIDC token for npm provenance attestation.
       id-token: write
-      # Scoped down from the default (write) for least-privilege publishing.
-      contents: read
+      # Required to create the GitHub Release in the final step below.
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # On a tag push, check out the pushed tag; on manual dispatch, the tag
+          # given as input (backfill). github.ref already points at the tag ref
+          # for push events.
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -91,12 +103,26 @@ jobs:
         # Publishes to npm with a provenance attestation (requires id-token: write above).
         # Lint and build run automatically as part of the release process.
         #
+        # Only runs for tag pushes. Manual (workflow_dispatch) runs skip this so a
+        # backfill never tries to re-publish an already-published version.
+        #
         # Option A (OIDC): leave NPM_TOKEN unset — the token step is skipped and
         #   npm uses the OIDC exchange instead.
         # Option B (token): set NPM_TOKEN in repo secrets — it is written to
         #   .npmrc here before publishing.
+        if: github.event_name == 'push'
         run: |
           [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
           npm run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        # Creates (or updates, idempotently) the GitHub Release for the tag, with
+        # auto-generated notes. Runs for both tag pushes and manual backfill.
+        # Authenticates with the automatic github.token — no secret to manage.
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          name: Release ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          generate_release_notes: true
