@@ -118,11 +118,17 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
-        # Creates (or updates, idempotently) the GitHub Release for the tag, with
-        # auto-generated notes. Runs for both tag pushes and manual backfill.
-        # Authenticates with the automatic github.token — no secret to manage.
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          name: Release ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          generate_release_notes: true
+        # Creates the GitHub Release for the tag with auto-generated notes. Runs
+        # for both tag pushes and manual backfill. Uses the pre-installed gh CLI
+        # (no third-party action, so it satisfies the org's actions allowlist) and
+        # the automatic github.token — no secret to manage. Idempotent: skips if a
+        # Release for the tag already exists, so re-runs don't fail.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub Release for $TAG already exists; skipping."
+          else
+            gh release create "$TAG" --verify-tag --title "Release $TAG" --generate-notes
+          fi
