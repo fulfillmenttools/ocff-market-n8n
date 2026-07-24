@@ -88,6 +88,12 @@ export const facilityOperations: INodeProperties[] = [
 				action: 'Get many facilities',
 			},
 			{
+				name: 'Search',
+				value: 'search',
+				description: 'Find facilities matching a set of conditions',
+				action: 'Search facilities',
+			},
+			{
 				name: 'Update',
 				value: 'update',
 				description: 'Update an existing facility',
@@ -140,7 +146,7 @@ export const facilityFields: INodeProperties[] = [
 	},
 
 	// ----------------------------------
-	//   facility: getAll
+	//   facility: getAll / search — pagination
 	// ----------------------------------
 	{
 		displayName: 'Return All',
@@ -150,7 +156,7 @@ export const facilityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['facility'],
-				operation: ['getAll'],
+				operation: ['getAll', 'search'],
 			},
 		},
 		description: 'Whether to return all results or only up to a given limit',
@@ -164,7 +170,7 @@ export const facilityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['facility'],
-				operation: ['getAll'],
+				operation: ['getAll', 'search'],
 				returnAll: [false],
 			},
 		},
@@ -225,7 +231,7 @@ export const facilityFields: INodeProperties[] = [
 	},
 
 	// ----------------------------------
-	//   facility: get / getAll — simplify
+	//   facility: get / getAll / search — simplify
 	// ----------------------------------
 	{
 		displayName: 'Simplify',
@@ -235,7 +241,7 @@ export const facilityFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['facility'],
-				operation: ['get', 'getAll'],
+				operation: ['get', 'getAll', 'search'],
 			},
 		},
 		description: 'Whether to return a simplified version of the response instead of the raw data',

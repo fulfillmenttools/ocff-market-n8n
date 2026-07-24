@@ -93,3 +93,88 @@ export async function fulfillmenttoolsApiRequestAllItems(
 
 	return returnData;
 }
+
+/**
+ * Download a binary file from fulfillmenttools (the `…/file` endpoints).
+ *
+ * Unlike the JSON helper this asks for the raw bytes and the full response, so
+ * the caller can pick up the `content-type` and `content-disposition` headers
+ * needed to build n8n binary data.
+ */
+export async function fulfillmenttoolsApiRequestFile(
+	this: IExecuteFunctions,
+	endpoint: string,
+): Promise<{ body: Buffer; headers: IDataObject }> {
+	const credentials = await this.getCredentials('fulfillmenttoolsApi');
+	const baseUrl = (credentials.apiUrl as string).replace(/\/+$/, '');
+
+	const options: IHttpRequestOptions = {
+		method: 'GET',
+		url: `${baseUrl}${endpoint}`,
+		encoding: 'arraybuffer',
+		returnFullResponse: true,
+		json: false,
+	};
+
+	try {
+		const response = (await this.helpers.httpRequestWithAuthentication.call(
+			this,
+			'fulfillmenttoolsApi',
+			options,
+		)) as { body: Buffer | ArrayBuffer; headers: IDataObject };
+
+		return {
+			body: Buffer.isBuffer(response.body) ? response.body : Buffer.from(response.body),
+			headers: response.headers ?? {},
+		};
+	} catch (error) {
+		throw new NodeApiError(this.getNode(), error as JsonObject);
+	}
+}
+
+/** Largest page size the fulfillmenttools search endpoints accept. */
+const SEARCH_MAX_PAGE_SIZE = 250;
+
+/**
+ * Run a fulfillmenttools search endpoint (`POST /api/{entity}/search`) and collect
+ * its results across pages.
+ *
+ * Search endpoints are cursor-paginated: the response carries a `pageInfo` with
+ * `hasNextPage` and an `endCursor` that is passed back as the `after` field of the
+ * next request. Pass a `limit` to stop early, or omit it to fetch everything.
+ */
+export async function fulfillmenttoolsSearchRequest(
+	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions,
+	endpoint: string,
+	propertyName: string,
+	payload: IDataObject,
+	limit?: number,
+): Promise<IDataObject[]> {
+	const returnData: IDataObject[] = [];
+	let after: string | undefined;
+
+	do {
+		const remaining = limit === undefined ? SEARCH_MAX_PAGE_SIZE : limit - returnData.length;
+		const body: IDataObject = {
+			...payload,
+			size: Math.min(SEARCH_MAX_PAGE_SIZE, remaining),
+		};
+		if (after) body.after = after;
+
+		const response = (await fulfillmenttoolsApiRequest.call(
+			this,
+			'POST',
+			endpoint,
+			body,
+		)) as IDataObject;
+
+		const items = (response[propertyName] as IDataObject[]) ?? [];
+		returnData.push(...items);
+
+		const pageInfo = (response.pageInfo as IDataObject) ?? {};
+		if (!items.length || pageInfo.hasNextPage !== true) break;
+		after = pageInfo.endCursor as string | undefined;
+	} while (after && (limit === undefined || returnData.length < limit));
+
+	return limit === undefined ? returnData : returnData.slice(0, limit);
+}

@@ -67,6 +67,12 @@ export const inboundOperations: INodeProperties[] = [
 				action: 'Get many inbound processes',
 			},
 			{
+				name: 'Search',
+				value: 'search',
+				description: 'Find inbound processes matching a set of conditions',
+				action: 'Search inbound processes',
+			},
+			{
 				name: 'Update',
 				value: 'update',
 				description: 'Update an existing inbound process',
@@ -134,7 +140,7 @@ export const inboundFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: RESOURCE,
-				operation: ['getAll'],
+				operation: ['getAll', 'search'],
 			},
 		},
 		description: 'Whether to return all results or only up to a given limit',
@@ -148,7 +154,7 @@ export const inboundFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: RESOURCE,
-				operation: ['getAll'],
+				operation: ['getAll', 'search'],
 				returnAll: [false],
 			},
 		},
@@ -229,7 +235,7 @@ export const inboundFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: RESOURCE,
-				operation: ['get', 'getAll'],
+				operation: ['get', 'getAll', 'search'],
 			},
 		},
 		description: 'Whether to return a simplified version of the response instead of the raw data',

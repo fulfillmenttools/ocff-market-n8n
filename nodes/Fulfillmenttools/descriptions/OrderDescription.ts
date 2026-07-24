@@ -57,6 +57,12 @@ export const orderOperations: INodeProperties[] = [
 				action: 'Get many orders',
 			},
 			{
+				name: 'Search',
+				value: 'search',
+				description: 'Find orders matching a set of conditions',
+				action: 'Search orders',
+			},
+			{
 				name: 'Update',
 				value: 'update',
 				description: 'Update an existing order',
@@ -118,7 +124,7 @@ export const orderFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['order'],
-				operation: ['getAll'],
+				operation: ['getAll', 'search'],
 			},
 		},
 		description: 'Whether to return all results or only up to a given limit',
@@ -132,7 +138,7 @@ export const orderFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['order'],
-				operation: ['getAll'],
+				operation: ['getAll', 'search'],
 				returnAll: [false],
 			},
 		},
@@ -179,7 +185,7 @@ export const orderFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: ['order'],
-				operation: ['get', 'getAll'],
+				operation: ['get', 'getAll', 'search'],
 			},
 		},
 		description: 'Whether to return a simplified version of the response instead of the raw data',
